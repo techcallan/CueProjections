@@ -2,29 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Home</title>
+  <title>Home - CueProjections</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <header>
     <h1>Welcome to CueProjections</h1>
+    <p id="userWelcome"></p>
   </header>
+
   <main>
-    <form id="loginForm">
-      <label for="username">Enter your username:</label>
-      <input type="text" id="username" required />
-      <button type="submit">Login</button>
-    </form>
+    <section id="showSection">
+      <h2>Your Shows</h2>
+      <ul id="showList"></ul>
+    </section>
   </main>
+
   <script>
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const username = document.getElementById('username').value.trim();
-      if (username) {
-        localStorage.setItem('username', username);
-        window.location.href = 'projections.html';
-      }
-    });
+    // Get the logged-in user
+    const currentUser = sessionStorage.getItem('loggedInUser');
+    const showList = document.getElementById('showList');
+    const userWelcome = document.getElementById('userWelcome');
+
+    if (!currentUser) {
+      alert('You must log in first.');
+      window.location.href = 'index.html';
+    } else {
+      userWelcome.textContent = `Hello, ${currentUser}`;
+    }
+
+    // Load assigned shows
+    const assignments = JSON.parse(localStorage.getItem('assignments')) || {};
+
+    if (assignments[currentUser]) {
+      assignments[currentUser].forEach(show => {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.textContent = `Start Show: ${show}`;
+        btn.onclick = () => {
+          sessionStorage.setItem('activeShow', show);
+          window.open('viewer.html', '_blank');
+          window.location.href = 'projections.html';
+        };
+        li.appendChild(btn);
+        showList.appendChild(li);
+      });
+    } else {
+      const li = document.createElement('li');
+      li.textContent = 'No shows assigned yet.';
+      showList.appendChild(li);
+    }
   </script>
 </body>
 </html>
