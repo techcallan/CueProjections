@@ -1,64 +1,85 @@
-/* Vibrant Blue Summery Theme */
-
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(to right, #a1c4fd, #c2e9fb);
-  color: #333;
+  font-family: "Segoe UI", sans-serif;
+  background: #1a1a1a;
+  color: #f9f9f9;
+  padding: 20px;
 }
 
-header {
-  background-color: #2196f3;
-  color: white;
-  padding: 1em;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+h1, h3 {
+  color: gold;
 }
 
-main {
-  padding: 2em;
+.login-container, .main-container {
+  max-width: 800px;
+  margin: auto;
+  background: #2a2a2a;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+input, select, button {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
 }
 
 button {
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  padding: 0.75em 1.5em;
-  margin: 0.5em;
+  background-color: gold;
+  color: black;
+  font-weight: bold;
   cursor: pointer;
-  border-radius: 5px;
-  font-size: 1em;
-  transition: background-color 0.3s ease;
 }
 
 button:hover {
-  background-color: #45a049;
+  background-color: #ffdf00;
 }
 
-select, input[type="text"] {
-  padding: 0.5em;
-  margin: 0.5em;
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  border: 2px solid #ccc;
   border-radius: 5px;
-  border: 1px solid #ccc;
 }
 
-#viewerImage, #viewerVideo {
-  width: 100vw;
+.preview-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
+.viewer-body {
+  background: black;
+  margin: 0;
   height: 100vh;
-  object-fit: contain;
-  display: block;
 }
 
-#fullscreenBtn {
+#cueImage {
+  display: block;
+  margin: auto;
+  max-height: 100vh;
+}
+
+#fsBtn {
   position: absolute;
   top: 10px;
   right: 10px;
-  padding: 10px 15px;
-  background-color: #ffeb3b;
+  background: gold;
   color: black;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  z-index: 1000;
-  font-weight: bold;
 }
+
