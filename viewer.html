@@ -1,126 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Viewer - ProjectionsGo</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background-color: #e6f7ff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    #media-container {
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: #000;
-      position: relative;
-    }
-
-    img, video {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      display: none;
-    }
-
-    #fullscreenBtn {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      padding: 10px 16px;
-      font-size: 16px;
-      background-color: #00bcd4;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      z-index: 1000;
-    }
-  </style>
+  <title>Viewer</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-  <div id="media-container">
-    <img id="imageViewer" />
-    <video id="videoViewer" autoplay controls muted></video>
-    <button id="fullscreenBtn" onclick="goFullscreen()">Go Fullscreen</button>
-  </div>
+<body class="viewer">
+  <button id="fullscreenBtn" onclick="enterFullscreen()">Fullscreen</button>
+  <div id="displayArea" class="full-display"></div>
 
   <script>
-    const img = document.getElementById('imageViewer');
-    const video = document.getElementById('videoViewer');
-    const btn = document.getElementById('fullscreenBtn');
+    const displayArea = document.getElementById("displayArea");
+    const btn = document.getElementById("fullscreenBtn");
 
     window.addEventListener("message", (event) => {
-      const { cue, blackout } = event.data;
-
-      if (blackout !== undefined) {
-        if (blackout) {
-          img.style.display = "none";
-          video.style.display = "none";
-          document.body.style.backgroundColor = "#000";
-        } else {
-          document.body.style.backgroundColor = "#e6f7ff";
-          // Re-display the previous cue
-          displayCue(currentCuePath);
-        }
+      const data = event.data;
+      displayArea.innerHTML = "";
+      if (data.cue === "blackout") {
+        displayArea.style.backgroundColor = "black";
         return;
       }
 
-      if (cue) {
-        displayCue(cue);
+      const file = data.cue;
+      const show = data.show;
+      const ext = file.split('.').pop();
+      if (ext === "mp4") {
+        const video = document.createElement("video");
+        video.src = `assets/${show}/${file}`;
+        video.autoplay = true;
+        video.loop = true;
+        video.muted = true;
+        video.classList.add("full-content");
+        displayArea.appendChild(video);
+      } else {
+        const img = document.createElement("img");
+        img.src = `assets/${show}/${file}`;
+        img.classList.add("full-content");
+        displayArea.appendChild(img);
       }
     });
 
-    let currentCuePath = "";
-
-    function displayCue(path) {
-      currentCuePath = path;
-      if (!path) return;
-
-      const isVideo = path.endsWith('.mp4');
-      img.style.display = "none";
-      video.style.display = "none";
-
-      if (isVideo) {
-        video.src = path;
-        video.style.display = "block";
-        video.play();
-      } else {
-        img.src = path;
-        img.style.display = "block";
-      }
-    }
-
-    function goFullscreen() {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-      } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-      } else if (elem.msRequestFullscreen) {
-        elem.msRequestFullscreen();
-      }
+    function enterFullscreen() {
       btn.style.display = "none";
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      }
     }
-
-    // Optional: preload viewer with the first cue (if passed as URL param)
-    window.onload = () => {
-      const params = new URLSearchParams(window.location.search);
-      const show = params.get('show');
-
-      // If you want to preload the first cue, do it here:
-      // (Assumes you have access to cue structure on client side or via message)
-    };
   </script>
 </body>
 </html>
