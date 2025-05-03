@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Projections</title>
+  <title>ProjectionsGo - Projections Control</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <header>
-    <h1>Projections</h1>
+    <h1>Projections Control Panel</h1>
   </header>
   <main>
     <div id="showSelection">
@@ -17,13 +17,18 @@
     <div id="cueControls">
       <button id="prevCue">Previous Cue</button>
       <button id="nextCue">Next Cue</button>
+      <button id="blackoutCue">Blackout</button>
     </div>
     <div id="previewArea"></div>
   </main>
   <script>
     const users = {
-      alice: ['RigCheck'],
-      bob: ['Trashion']
+      admin: ['RigCheck', 'Trashion'],
+      customer1: ['RigCheck'],
+      customer2: ['RigCheck'],
+      customer3: ['RigCheck'],
+      customer4: ['RigCheck'],
+      customer5: ['RigCheck']
     };
 
     const shows = {
@@ -32,63 +37,77 @@
     };
 
     const username = localStorage.getItem('username');
+    const viewerWindow = window.open('viewer.html', 'viewerWindow');
+
     if (!username || !users[username]) {
-      window.location.href = 'home.html';
+      alert("You are not authorized. Returning to home.");
+      window.location.href = 'index.html';
     }
 
     const showSelect = document.getElementById('showSelect');
     const previewArea = document.getElementById('previewArea');
     let cues = [];
     let currentCueIndex = 0;
+    let isBlackout = false;
+    let lastCueSrc = "";
 
-    // Populate show selection
+    // Populate dropdown
     users[username].forEach(show => {
-      const option = document.createElement('option');
-      option.value = show;
-      option.textContent = show;
-      showSelect.appendChild(option);
+      const opt = document.createElement("option");
+      opt.value = show;
+      opt.textContent = show;
+      showSelect.appendChild(opt);
     });
 
-    function renderCue(cue) {
-      const ext = cue.split('.').pop().toLowerCase();
-      previewArea.innerHTML = '';
-      if (ext === 'mp4') {
-        const video = document.createElement('video');
-        video.src = `assets/${showSelect.value}/${cue}`;
-        video.autoplay = true;
-        video.loop = true;
-        video.muted = true;
-        video.controls = false;
-        video.style.maxWidth = '100%';
-        previewArea.appendChild(video);
-        sendMessageToViewer(video.src, 'video');
+    function renderCue(cueFile) {
+      const ext = cueFile.split('.').pop().toLowerCase();
+      previewArea.innerHTML = "";
+      let element;
+
+      if (ext === "mp4") {
+        element = document.createElement("video");
+        element.src = `assets/${showSelect.value}/${cueFile}`;
+        element.autoplay = true;
+        element.loop = true;
+        element.muted = true;
       } else {
-        const img = document.createElement('img');
-        img.src = `assets/${showSelect.value}/${cue}`;
-        img.style.maxWidth = '100%';
-        previewArea.appendChild(img);
-        sendMessageToViewer(img.src, 'image');
+        element = document.createElement("img");
+        element.src = `assets/${showSelect.value}/${cueFile}`;
+      }
+
+      element.style.maxWidth = "100%";
+      element.style.maxHeight = "200px";
+      previewArea.appendChild(element);
+      sendToViewer(element.src, ext === "mp4" ? "video" : "image");
+      lastCueSrc = element.src;
+    }
+
+    function sendToViewer(src, type) {
+      if (viewerWindow) {
+        viewerWindow.postMessage({ type: 'cueChange', src: src, mediaType: type }, '*');
       }
     }
 
-    function sendMessageToViewer(src, type) {
-      const viewerWindow = window.open('viewer.html', 'viewerWindow');
-      viewerWindow.postMessage({ type: 'cueChange', src, mediaType: type }, '*');
+    function blackoutOn() {
+      isBlackout = true;
+      previewArea.innerHTML = "<h2 style='text-align:center; color:red;'>BLACKOUT</h2>";
+      if (viewerWindow) viewerWindow.postMessage({ type: 'cueChange', src: '', mediaType: 'blackout' }, '*');
+      document.getElementById('blackoutCue').textContent = "Turn Off Blackout";
     }
 
-    document.getElementById('prevCue').addEventListener('click', () => {
-      if (currentCueIndex > 0) {
-        currentCueIndex--;
-        renderCue(cues[currentCueIndex]);
-      }
-    });
+    function blackoutOff() {
+      isBlackout = false;
+      renderCue(cues[currentCueIndex]);
+      document.getElementById('blackoutCue').textContent = "Blackout";
+    }
 
-    document.getElementById('nextCue').addEventListener('click', () => {
-      if (currentCueIndex < cues.length - 1) {
-        currentCueIndex++;
-        renderCue(cues[currentCueIndex]);
-      }
-    });
+    // Load first show
+    if (showSelect.options.length > 0) {
+      const defaultShow = showSelect.options[0].value;
+      cues = shows[defaultShow];
+      showSelect.value = defaultShow;
+      renderCue(cues[0]);
+    }
 
     showSelect.addEventListener('change', () => {
       const selectedShow = showSelect.value;
@@ -97,14 +116,23 @@
       renderCue(cues[currentCueIndex]);
     });
 
-    // Initialize with first show
-    if (showSelect.options.length > 0) {
-      showSelect.selectedIndex = 0;
-      const selectedShow = showSelect.value;
-      cues = shows[selectedShow];
-      currentCueIndex = 0;
-      renderCue(cues[currentCueIndex]);
-    }
+    document.getElementById("prevCue").addEventListener("click", () => {
+      if (currentCueIndex > 0) {
+        currentCueIndex--;
+        renderCue(cues[currentCueIndex]);
+      }
+    });
+
+    document.getElementById("nextCue").addEventListener("click", () => {
+      if (currentCueIndex < cues.length - 1) {
+        currentCueIndex++;
+        renderCue(cues[currentCueIndex]);
+      }
+    });
+
+    document.getElementById("blackoutCue").addEventListener("click", () => {
+      isBlackout ? blackoutOff() : blackoutOn();
+    });
   </script>
 </body>
 </html>
