@@ -1,185 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>ProjectionsGo</title>
+  <title>Projections Control</title>
   <link rel="stylesheet" href="css/style.css">
-  <style>
-    body {
-      background: #f0faff;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 20px;
-      color: #003f5c;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .preview-area {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-    .preview-box {
-      width: 48%;
-      text-align: center;
-    }
-    .preview-box img, .preview-box video {
-      width: 100%;
-      height: 220px;
-      object-fit: contain;
-      border: 2px solid #ccc;
-      border-radius: 10px;
-      background: #fff;
-    }
-    .controls {
-      text-align: center;
-    }
-    .controls button {
-      background: #00bcd4;
-      color: white;
-      padding: 12px 20px;
-      margin: 10px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .controls button:hover {
-      background: #008c9e;
-    }
-  </style>
 </head>
 <body>
-
-<h1>ProjectionsGo</h1>
-
-<div class="preview-area">
-  <div class="preview-box">
-    <h3>Current Cue</h3>
-    <img id="currentImage" />
-    <video id="currentVideo" controls autoplay style="display:none;"></video>
-    <p id="currentInfo"></p>
+  <div class="container">
+    <h1>Projections Control</h1>
+    <div id="controls">
+      <p>Current Cue: <span id="currentCue"></span></p>
+      <div id="previews">
+        <div>
+          <h3>Current</h3>
+          <div id="currentPreview" class="preview-box"></div>
+        </div>
+        <div>
+          <h3>Next</h3>
+          <div id="nextPreview" class="preview-box"></div>
+        </div>
+      </div>
+      <button onclick="goCue()">GO</button>
+      <button onclick="backCue()">BACK</button>
+      <button onclick="toggleBlackout()">BLACKOUT</button>
+      <button onclick="endShow()">END SHOW</button>
+    </div>
   </div>
-  <div class="preview-box">
-    <h3>Next Cue</h3>
-    <img id="nextImage" />
-    <video id="nextVideo" controls style="display:none;"></video>
-    <p id="nextInfo"></p>
-  </div>
-</div>
 
-<div class="controls">
-  <button onclick="back()">BACK</button>
-  <button onclick="go()">GO</button>
-  <button onclick="toggleBlackout()">BLACKOUT</button>
-  <button onclick="endShow()">END SHOW</button>
-</div>
+  <script>
+    const cues = {
+      RigCheck: ["1.png", "2.png", "3.png", "4.mp4"],
+      Trashion: []
+    };
 
-<script>
-let cueIndex = 0;
-let blackout = false;
-let viewerWindow = null;
-let currentShow = '';
-const shows = {
-  "RigCheck": [
-    "assets/RigCheck/1.png",
-    "assets/RigCheck/2.png",
-    "assets/RigCheck/3.png",
-    "assets/RigCheck/4.mp4"
-  ],
-  "Trashion": []
-};
+    const show = localStorage.getItem("activeShow");
+    const cueList = cues[show];
+    let currentIndex = 0;
+    let blackout = false;
 
-function init() {
-  const params = new URLSearchParams(window.location.search);
-  currentShow = params.get("show");
+    const currentCueEl = document.getElementById("currentCue");
+    const currentPreview = document.getElementById("currentPreview");
+    const nextPreview = document.getElementById("nextPreview");
 
-  if (!currentShow || !shows[currentShow]) {
-    alert("Invalid or missing show.");
-    window.location.href = "home.html";
-    return;
-  }
+    function updatePreviews() {
+      currentCueEl.textContent = `#${currentIndex + 1} — ${cueList[currentIndex] || "End"}`;
+      updatePreview(currentPreview, cueList[currentIndex]);
+      updatePreview(nextPreview, cueList[currentIndex + 1]);
+      sendToViewer();
+    }
 
-  cueIndex = 0;
-  openViewer();
-  updateCue();
-}
+    function updatePreview(container, file) {
+      container.innerHTML = "";
+      if (!file) return;
+      const ext = file.split('.').pop();
+      if (ext === 'mp4') {
+        const video = document.createElement("video");
+        video.src = `assets/${show}/${file}`;
+        video.autoplay = true;
+        video.loop = true;
+        video.muted = true;
+        container.appendChild(video);
+      } else {
+        const img = document.createElement("img");
+        img.src = `assets/${show}/${file}`;
+        container.appendChild(img);
+      }
+    }
 
-function updateCue() {
-  const cue = shows[currentShow][cueIndex];
-  displayMedia(cue, "current");
+    function goCue() {
+      if (currentIndex < cueList.length - 1) currentIndex++;
+      updatePreviews();
+    }
 
-  const nextCue = shows[currentShow][cueIndex + 1];
-  displayMedia(nextCue, "next");
+    function backCue() {
+      if (currentIndex > 0) currentIndex--;
+      updatePreviews();
+    }
 
-  if (viewerWindow) {
-    viewerWindow.postMessage({ cue }, "*");
-  }
-}
+    function toggleBlackout() {
+      blackout = !blackout;
+      if (blackout) {
+        document.body.classList.add("blackout");
+      } else {
+        document.body.classList.remove("blackout");
+      }
+      sendToViewer();
+    }
 
-function displayMedia(file, target) {
-  const isVideo = file && file.endsWith(".mp4");
+    function endShow() {
+      window.location.href = "home.html";
+    }
 
-  const img = document.getElementById(`${target}Image`);
-  const video = document.getElementById(`${target}Video`);
-  const info = document.getElementById(`${target}Info`);
+    function sendToViewer() {
+      const viewer = window.open('', '_blank');
+      if (viewer) {
+        viewer.postMessage({
+          cue: blackout ? "blackout" : cueList[currentIndex],
+          show
+        }, '*');
+      }
+    }
 
-  if (!file) {
-    img.style.display = "none";
-    video.style.display = "none";
-    info.innerText = "No Media";
-    return;
-  }
-
-  if (isVideo) {
-    img.style.display = "none";
-    video.style.display = "block";
-    video.src = file;
-    if (target === "current") video.play();
-  } else {
-    video.style.display = "none";
-    img.style.display = "block";
-    img.src = file;
-  }
-
-  info.innerText = file.split("/").pop();
-}
-
-function go() {
-  if (cueIndex < shows[currentShow].length - 1) {
-    cueIndex++;
-    updateCue();
-  }
-}
-
-function back() {
-  if (cueIndex > 0) {
-    cueIndex--;
-    updateCue();
-  }
-}
-
-function toggleBlackout() {
-  blackout = !blackout;
-  if (viewerWindow) {
-    viewerWindow.postMessage({ blackout }, "*");
-  }
-}
-
-function endShow() {
-  window.location.href = "home.html";
-}
-
-function openViewer() {
-  if (!viewerWindow || viewerWindow.closed) {
-    viewerWindow = window.open(`viewer.html?show=${currentShow}`, "viewer");
-  }
-}
-
-window.onload = init;
-</script>
+    updatePreviews();
+  </script>
 </body>
 </html>
