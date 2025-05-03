@@ -1,41 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>ProjectionsGo - Login </title>
+  <title>CueProjections Login</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="login-page">
-  <div class="login-box">
+  <div class="login-container">
     <h1>CueProjections</h1>
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="login()">Login</button>
-    <p id="login-error"></p>
+    <form onsubmit="login(); return false;">
+      <input type="text" id="username" placeholder="Username" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+      <p id="error" class="error-text"></p>
+    </form>
   </div>
 
-<script>
-const users = {
-  admin: "admin",
-  customer1: "customer1",
-  customer2: "customer2",
-  customer3: "customer3",
-  customer4: "customer4",
-  customer5: "customer5"
-};
+  <script>
+    const users = {
+      admin: 'admin',
+      customer1: 'customer1',
+      customer2: 'customer2',
+      customer3: 'customer3',
+      customer4: 'customer4',
+      customer5: 'customer5'
+    };
 
-function login() {
-  const u = document.getElementById("username").value;
-  const p = document.getElementById("password").value;
-  if (users[u] && users[u] === p) {
-    localStorage.setItem("user", u);
-    if (u === "admin") window.location.href = "admin.html";
-    else window.location.href = "home.html";
-  } else {
-    document.getElementById("login-error").innerText = "Invalid credentials.";
-  }
-}
-</script>
+    function login() {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+
+      if (users[user] === pass) {
+        localStorage.setItem("user", user);
+        window.location.href = user === 'admin' ? 'admin.html' : 'home.html';
+      } else {
+        document.getElementById("error").textContent = "Invalid credentials!";
+      }
+    }
+  </script>
 </body>
 </html>
 
