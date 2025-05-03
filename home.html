@@ -1,53 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>ProjectionsGo - Your Shows</title>
+  <title>Home - CueProjections</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <h1>Your Shows</h1>
-  <div id="showList"></div>
+  <div class="container">
+    <h1>Welcome to CueProjections</h1>
+    <div id="showList"></div>
+  </div>
 
-<script>
-const allShows = {
-  "RigCheck": ["1.png", "2.png", "3.png", "4.mp4"],
-  "Trashion": []
-};
+  <script>
+    const assignedShows = {
+      customer1: ["RigCheck"],
+      customer2: ["RigCheck"],
+      customer3: ["RigCheck"],
+      customer4: ["RigCheck"],
+      customer5: ["RigCheck"]
+    };
 
-const assignments = {
-  customer1: ["RigCheck", "Trashion"],
-  customer2: ["RigCheck"],
-  customer3: ["RigCheck"],
-  customer4: ["RigCheck"],
-  customer5: ["RigCheck"]
-};
+    const user = localStorage.getItem("user");
+    const shows = assignedShows[user] || [];
 
-const user = localStorage.getItem("user");
-
-if (!user || user === "admin") {
-  window.location.href = "index.html";
-} else {
-  const assigned = assignments[user] || [];
-  const container = document.getElementById("showList");
-  if (assigned.length === 0) container.innerHTML = "No shows assigned.";
-  else {
-    assigned.forEach(show => {
-      const div = document.createElement("div");
-      div.className = "show-card";
-      div.innerHTML = `
-        <h3>${show}</h3>
-        <button onclick="startShow('${show}')">START SHOW</button>
-      `;
-      container.appendChild(div);
+    const showList = document.getElementById("showList");
+    shows.forEach(show => {
+      const btn = document.createElement("button");
+      btn.textContent = `Start Show: ${show}`;
+      btn.onclick = () => {
+        localStorage.setItem("activeShow", show);
+        window.open("viewer.html", "_blank");
+        window.location.href = "projections.html";
+      };
+      showList.appendChild(btn);
     });
-  }
-}
-
-function startShow(showName) {
-  window.open(`viewer.html?show=${showName}`, "_blank");
-  window.location.href = `projections.html?show=${showName}`;
-}
-</script>
+  </script>
 </body>
 </html>
