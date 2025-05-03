@@ -3,136 +3,126 @@
 <head>
   <meta charset="UTF-8" />
   <title>ProjectionsGo - Projections Control</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header>
-    <h1>Projections Control Panel</h1>
-  </header>
-  <main>
-    <div id="showSelection">
-      <label for="showSelect">Select Show:</label>
-      <select id="showSelect"></select>
+  <h1>Projections Control Panel</h1>
+  <div class="preview-area">
+    <div>
+      <h3>Current</h3>
+      <video id="currentVideo" controls autoplay style="display:none;"></video>
+      <img id="currentImage" />
+      <p id="currentInfo"></p>
     </div>
-    <div id="cueControls">
-      <button id="prevCue">Previous Cue</button>
-      <button id="nextCue">Next Cue</button>
-      <button id="blackoutCue">Blackout</button>
+    <div>
+      <h3>Next</h3>
+      <video id="nextVideo" controls style="display:none;"></video>
+      <img id="nextImage" />
+      <p id="nextInfo"></p>
     </div>
-    <div id="previewArea"></div>
-  </main>
-  <script>
-    const users = {
-      admin: ['RigCheck', 'Trashion'],
-      customer1: ['RigCheck'],
-      customer2: ['RigCheck'],
-      customer3: ['RigCheck'],
-      customer4: ['RigCheck'],
-      customer5: ['RigCheck']
-    };
+  </div>
 
-    const shows = {
-      RigCheck: ['1.png', '2.mp4', '3.png', '4.mp4'],
-      Trashion: ['1.mp4', '2.png', '3.mp4']
-    };
+  <div class="controls">
+    <button onclick="go()">GO</button>
+    <button onclick="back()">BACK</button>
+    <button onclick="toggleBlackout()">BLACKOUT</button>
+    <button onclick="endShow()">END SHOW</button>
+  </div>
 
-    const username = localStorage.getItem('username');
-    const viewerWindow = window.open('viewer.html', 'viewerWindow');
+<script>
+const query = new URLSearchParams(window.location.search);
+const showName = query.get("show");
 
-    if (!username || !users[username]) {
-      alert("You are not authorized. Returning to home.");
-      window.location.href = 'index.html';
+const shows = {
+  "RigCheck": ["assets/RigCheck/1.png", "assets/RigCheck/2.png", "assets/RigCheck/3.png", "assets/RigCheck/4.mp4"],
+  "Trashion": []
+};
+
+let cueIndex = 0;
+let blackout = false;
+
+const currentImage = document.getElementById("currentImage");
+const currentVideo = document.getElementById("currentVideo");
+const currentInfo = document.getElementById("currentInfo");
+
+const nextImage = document.getElementById("nextImage");
+const nextVideo = document.getElementById("nextVideo");
+const nextInfo = document.getElementById("nextInfo");
+
+function showCue(index) {
+  const cue = shows[showName][index];
+  if (!cue) return;
+
+  const isVideo = cue.endsWith(".mp4");
+  currentImage.style.display = isVideo ? "none" : "block";
+  currentVideo.style.display = isVideo ? "block" : "none";
+
+  if (isVideo) {
+    currentVideo.src = cue;
+    currentVideo.play();
+  } else {
+    currentImage.src = cue;
+  }
+
+  currentInfo.innerText = `Cue ${index + 1}`;
+
+  const nextCue = shows[showName][index + 1];
+  if (nextCue) {
+    const isNextVideo = nextCue.endsWith(".mp4");
+    nextImage.style.display = isNextVideo ? "none" : "block";
+    nextVideo.style.display = isNextVideo ? "block" : "none";
+
+    if (isNextVideo) {
+      nextVideo.src = nextCue;
+    } else {
+      nextImage.src = nextCue;
     }
+    nextInfo.innerText = `Cue ${index + 2}`;
+  } else {
+    nextImage.src = "";
+    nextVideo.src = "";
+    nextInfo.innerText = "";
+  }
+}
 
-    const showSelect = document.getElementById('showSelect');
-    const previewArea = document.getElementById('previewArea');
-    let cues = [];
-    let currentCueIndex = 0;
-    let isBlackout = false;
-    let lastCueSrc = "";
+function go() {
+  if (cueIndex < shows[showName].length - 1) {
+    cueIndex++;
+    showCue(cueIndex);
+    updateViewer(cueIndex);
+  }
+}
 
-    // Populate dropdown
-    users[username].forEach(show => {
-      const opt = document.createElement("option");
-      opt.value = show;
-      opt.textContent = show;
-      showSelect.appendChild(opt);
-    });
+function back() {
+  if (cueIndex > 0) {
+    cueIndex--;
+    showCue(cueIndex);
+    updateViewer(cueIndex);
+  }
+}
 
-    function renderCue(cueFile) {
-      const ext = cueFile.split('.').pop().toLowerCase();
-      previewArea.innerHTML = "";
-      let element;
+function toggleBlackout() {
+  blackout = !blackout;
+  document.body.style.backgroundColor = blackout ? "black" : "";
+  if (!blackout) showCue(cueIndex);
+}
 
-      if (ext === "mp4") {
-        element = document.createElement("video");
-        element.src = `assets/${showSelect.value}/${cueFile}`;
-        element.autoplay = true;
-        element.loop = true;
-        element.muted = true;
-      } else {
-        element = document.createElement("img");
-        element.src = `assets/${showSelect.value}/${cueFile}`;
-      }
+function endShow() {
+  window.location.href = "home.html";
+}
 
-      element.style.maxWidth = "100%";
-      element.style.maxHeight = "200px";
-      previewArea.appendChild(element);
-      sendToViewer(element.src, ext === "mp4" ? "video" : "image");
-      lastCueSrc = element.src;
-    }
+function updateViewer(index) {
+  const viewer = window.open('', 'viewerWindow');
+  if (viewer) {
+    viewer.postMessage({ cue: shows[showName][index] }, '*');
+  }
+}
 
-    function sendToViewer(src, type) {
-      if (viewerWindow) {
-        viewerWindow.postMessage({ type: 'cueChange', src: src, mediaType: type }, '*');
-      }
-    }
-
-    function blackoutOn() {
-      isBlackout = true;
-      previewArea.innerHTML = "<h2 style='text-align:center; color:red;'>BLACKOUT</h2>";
-      if (viewerWindow) viewerWindow.postMessage({ type: 'cueChange', src: '', mediaType: 'blackout' }, '*');
-      document.getElementById('blackoutCue').textContent = "Turn Off Blackout";
-    }
-
-    function blackoutOff() {
-      isBlackout = false;
-      renderCue(cues[currentCueIndex]);
-      document.getElementById('blackoutCue').textContent = "Blackout";
-    }
-
-    // Load first show
-    if (showSelect.options.length > 0) {
-      const defaultShow = showSelect.options[0].value;
-      cues = shows[defaultShow];
-      showSelect.value = defaultShow;
-      renderCue(cues[0]);
-    }
-
-    showSelect.addEventListener('change', () => {
-      const selectedShow = showSelect.value;
-      cues = shows[selectedShow];
-      currentCueIndex = 0;
-      renderCue(cues[currentCueIndex]);
-    });
-
-    document.getElementById("prevCue").addEventListener("click", () => {
-      if (currentCueIndex > 0) {
-        currentCueIndex--;
-        renderCue(cues[currentCueIndex]);
-      }
-    });
-
-    document.getElementById("nextCue").addEventListener("click", () => {
-      if (currentCueIndex < cues.length - 1) {
-        currentCueIndex++;
-        renderCue(cues[currentCueIndex]);
-      }
-    });
-
-    document.getElementById("blackoutCue").addEventListener("click", () => {
-      isBlackout ? blackoutOff() : blackoutOn();
-    });
-  </script>
+window.onload = () => {
+  showCue(0);
+  updateViewer(0);
+};
+</script>
 </body>
 </html>
+
