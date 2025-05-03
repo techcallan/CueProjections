@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Projections</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Projections</h1>
+  </header>
+  <main>
+    <div id="showSelection">
+      <label for="showSelect">Select Show:</label>
+      <select id="showSelect"></select>
+    </div>
+    <div id="cueControls">
+      <button id="prevCue">Previous Cue</button>
+      <button id="nextCue">Next Cue</button>
+    </div>
+    <div id="previewArea"></div>
+  </main>
+  <script>
+    const users = {
+      alice: ['RigCheck'],
+      bob: ['Trashion']
+    };
+
+    const shows = {
+      RigCheck: ['1.png', '2.mp4', '3.png', '4.mp4'],
+      Trashion: ['1.mp4', '2.png', '3.mp4']
+    };
+
+    const username = localStorage.getItem('username');
+    if (!username || !users[username]) {
+      window.location.href = 'home.html';
+    }
+
+    const showSelect = document.getElementById('showSelect');
+    const previewArea = document.getElementById('previewArea');
+    let cues = [];
+    let currentCueIndex = 0;
+
+    // Populate show selection
+    users[username].forEach(show => {
+      const option = document.createElement('option');
+      option.value = show;
+      option.textContent = show;
+      showSelect.appendChild(option);
+    });
+
+    function renderCue(cue) {
+      const ext = cue.split('.').pop().toLowerCase();
+      previewArea.innerHTML = '';
+      if (ext === 'mp4') {
+        const video = document.createElement('video');
+        video.src = `assets/${showSelect.value}/${cue}`;
+        video.autoplay = true;
+        video.loop = true;
+        video.muted = true;
+        video.controls = false;
+        video.style.maxWidth = '100%';
+        previewArea.appendChild(video);
+        sendMessageToViewer(video.src, 'video');
+      } else {
+        const img = document.createElement('img');
+        img.src = `assets/${showSelect.value}/${cue}`;
+        img.style.maxWidth = '100%';
+        previewArea.appendChild(img);
+        sendMessageToViewer(img.src, 'image');
+      }
+    }
+
+    function sendMessageToViewer(src, type) {
+      const viewerWindow = window.open('viewer.html', 'viewerWindow');
+      viewerWindow.postMessage({ type: 'cueChange', src, mediaType: type }, '*');
+    }
+
+    document.getElementById('prevCue').addEventListener('click', () => {
+      if (currentCueIndex > 0) {
+        currentCueIndex--;
+        renderCue(cues[currentCueIndex]);
+      }
+    });
+
+    document.getElementById('nextCue').addEventListener('click', () => {
+      if (currentCueIndex < cues.length - 1) {
+        currentCueIndex++;
+        renderCue(cues[currentCueIndex]);
+      }
+    });
+
+    showSelect.addEventListener('change', () => {
+      const selectedShow = showSelect.value;
+      cues = shows[selectedShow];
+      currentCueIndex = 0;
+      renderCue(cues[currentCueIndex]);
+    });
+
+    // Initialize with first show
+    if (showSelect.options.length > 0) {
+      showSelect.selectedIndex = 0;
+      const selectedShow = showSelect.value;
+      cues = shows[selectedShow];
+      currentCueIndex = 0;
+      renderCue(cues[currentCueIndex]);
+    }
+  </script>
+</body>
+</html>
