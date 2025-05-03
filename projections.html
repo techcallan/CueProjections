@@ -2,127 +2,184 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ProjectionsGo - Projections Control</title>
+  <title>ProjectionsGo</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    body {
+      background: #f0faff;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #003f5c;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .preview-area {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .preview-box {
+      width: 48%;
+      text-align: center;
+    }
+    .preview-box img, .preview-box video {
+      width: 100%;
+      height: 220px;
+      object-fit: contain;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .controls {
+      text-align: center;
+    }
+    .controls button {
+      background: #00bcd4;
+      color: white;
+      padding: 12px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .controls button:hover {
+      background: #008c9e;
+    }
+  </style>
 </head>
 <body>
-  <h1>Projections Control Panel</h1>
-  <div class="preview-area">
-    <div>
-      <h3>Current</h3>
-      <video id="currentVideo" controls autoplay style="display:none;"></video>
-      <img id="currentImage" />
-      <p id="currentInfo"></p>
-    </div>
-    <div>
-      <h3>Next</h3>
-      <video id="nextVideo" controls style="display:none;"></video>
-      <img id="nextImage" />
-      <p id="nextInfo"></p>
-    </div>
-  </div>
 
-  <div class="controls">
-    <button onclick="go()">GO</button>
-    <button onclick="back()">BACK</button>
-    <button onclick="toggleBlackout()">BLACKOUT</button>
-    <button onclick="endShow()">END SHOW</button>
+<h1>ProjectionsGo</h1>
+
+<div class="preview-area">
+  <div class="preview-box">
+    <h3>Current Cue</h3>
+    <img id="currentImage" />
+    <video id="currentVideo" controls autoplay style="display:none;"></video>
+    <p id="currentInfo"></p>
   </div>
+  <div class="preview-box">
+    <h3>Next Cue</h3>
+    <img id="nextImage" />
+    <video id="nextVideo" controls style="display:none;"></video>
+    <p id="nextInfo"></p>
+  </div>
+</div>
+
+<div class="controls">
+  <button onclick="back()">BACK</button>
+  <button onclick="go()">GO</button>
+  <button onclick="toggleBlackout()">BLACKOUT</button>
+  <button onclick="endShow()">END SHOW</button>
+</div>
 
 <script>
-const query = new URLSearchParams(window.location.search);
-const showName = query.get("show");
-
+let cueIndex = 0;
+let blackout = false;
+let viewerWindow = null;
+let currentShow = '';
 const shows = {
-  "RigCheck": ["assets/RigCheck/1.png", "assets/RigCheck/2.png", "assets/RigCheck/3.png", "assets/RigCheck/4.mp4"],
+  "RigCheck": [
+    "assets/RigCheck/1.png",
+    "assets/RigCheck/2.png",
+    "assets/RigCheck/3.png",
+    "assets/RigCheck/4.mp4"
+  ],
   "Trashion": []
 };
 
-let cueIndex = 0;
-let blackout = false;
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  currentShow = params.get("show");
 
-const currentImage = document.getElementById("currentImage");
-const currentVideo = document.getElementById("currentVideo");
-const currentInfo = document.getElementById("currentInfo");
-
-const nextImage = document.getElementById("nextImage");
-const nextVideo = document.getElementById("nextVideo");
-const nextInfo = document.getElementById("nextInfo");
-
-function showCue(index) {
-  const cue = shows[showName][index];
-  if (!cue) return;
-
-  const isVideo = cue.endsWith(".mp4");
-  currentImage.style.display = isVideo ? "none" : "block";
-  currentVideo.style.display = isVideo ? "block" : "none";
-
-  if (isVideo) {
-    currentVideo.src = cue;
-    currentVideo.play();
-  } else {
-    currentImage.src = cue;
+  if (!currentShow || !shows[currentShow]) {
+    alert("Invalid or missing show.");
+    window.location.href = "home.html";
+    return;
   }
 
-  currentInfo.innerText = `Cue ${index + 1}`;
+  cueIndex = 0;
+  openViewer();
+  updateCue();
+}
 
-  const nextCue = shows[showName][index + 1];
-  if (nextCue) {
-    const isNextVideo = nextCue.endsWith(".mp4");
-    nextImage.style.display = isNextVideo ? "none" : "block";
-    nextVideo.style.display = isNextVideo ? "block" : "none";
+function updateCue() {
+  const cue = shows[currentShow][cueIndex];
+  displayMedia(cue, "current");
 
-    if (isNextVideo) {
-      nextVideo.src = nextCue;
-    } else {
-      nextImage.src = nextCue;
-    }
-    nextInfo.innerText = `Cue ${index + 2}`;
-  } else {
-    nextImage.src = "";
-    nextVideo.src = "";
-    nextInfo.innerText = "";
+  const nextCue = shows[currentShow][cueIndex + 1];
+  displayMedia(nextCue, "next");
+
+  if (viewerWindow) {
+    viewerWindow.postMessage({ cue }, "*");
   }
 }
 
+function displayMedia(file, target) {
+  const isVideo = file && file.endsWith(".mp4");
+
+  const img = document.getElementById(`${target}Image`);
+  const video = document.getElementById(`${target}Video`);
+  const info = document.getElementById(`${target}Info`);
+
+  if (!file) {
+    img.style.display = "none";
+    video.style.display = "none";
+    info.innerText = "No Media";
+    return;
+  }
+
+  if (isVideo) {
+    img.style.display = "none";
+    video.style.display = "block";
+    video.src = file;
+    if (target === "current") video.play();
+  } else {
+    video.style.display = "none";
+    img.style.display = "block";
+    img.src = file;
+  }
+
+  info.innerText = file.split("/").pop();
+}
+
 function go() {
-  if (cueIndex < shows[showName].length - 1) {
+  if (cueIndex < shows[currentShow].length - 1) {
     cueIndex++;
-    showCue(cueIndex);
-    updateViewer(cueIndex);
+    updateCue();
   }
 }
 
 function back() {
   if (cueIndex > 0) {
     cueIndex--;
-    showCue(cueIndex);
-    updateViewer(cueIndex);
+    updateCue();
   }
 }
 
 function toggleBlackout() {
   blackout = !blackout;
-  document.body.style.backgroundColor = blackout ? "black" : "";
-  if (!blackout) showCue(cueIndex);
+  if (viewerWindow) {
+    viewerWindow.postMessage({ blackout }, "*");
+  }
 }
 
 function endShow() {
   window.location.href = "home.html";
 }
 
-function updateViewer(index) {
-  const viewer = window.open('', 'viewerWindow');
-  if (viewer) {
-    viewer.postMessage({ cue: shows[showName][index] }, '*');
+function openViewer() {
+  if (!viewerWindow || viewerWindow.closed) {
+    viewerWindow = window.open(`viewer.html?show=${currentShow}`, "viewer");
   }
 }
 
-window.onload = () => {
-  showCue(0);
-  updateViewer(0);
-};
+window.onload = init;
 </script>
 </body>
 </html>
-
