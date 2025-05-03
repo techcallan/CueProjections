@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Home</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Welcome to CueProjections</h1>
+  </header>
+  <main>
+    <form id="loginForm">
+      <label for="username">Enter your username:</label>
+      <input type="text" id="username" required />
+      <button type="submit">Login</button>
+    </form>
+  </main>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      if (username) {
+        localStorage.setItem('username', username);
+        window.location.href = 'projections.html';
+      }
+    });
+  </script>
+</body>
+</html>
