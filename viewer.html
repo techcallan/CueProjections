@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Viewer</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      overflow: hidden;
+    }
+
+    #viewerImage, #viewerVideo {
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain;
+      display: none;
+    }
+
+    #fullscreenBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 10px 15px;
+      background-color: #03a9f4;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+      cursor: pointer;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <button id="fullscreenBtn">Enter Fullscreen</button>
+  <img id="viewerImage" src="" alt="Cue Image">
+  <video id="viewerVideo" autoplay loop muted playsinline></video>
+
+  <script>
+    const img = document.getElementById('viewerImage');
+    const vid = document.getElementById('viewerVideo');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+    window.addEventListener('message', (event) => {
+      const { type, src, mediaType } = event.data;
+      if (type === 'cueChange') {
+        if (mediaType === 'image') {
+          vid.pause();
+          vid.style.display = 'none';
+          img.src = src;
+          img.style.display = 'block';
+        } else if (mediaType === 'video') {
+          img.style.display = 'none';
+          vid.src = src;
+          vid.style.display = 'block';
+          vid.play();
+        }
+      }
+    });
+
+    fullscreenBtn.addEventListener('click', () => {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+      }
+      fullscreenBtn.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
