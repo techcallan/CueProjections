@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CueProjections - Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - CueProjections</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <header>
-    <h1>CueProjections Login</h1>
-  </header>
-  <main>
+  <div class="login-container">
+    <h1>CueProjections</h1>
     <form id="loginForm">
       <label for="username">Username:</label>
       <input type="text" id="username" required />
@@ -19,32 +18,29 @@
 
       <button type="submit">Login</button>
     </form>
-  </main>
+    <p id="errorMessage" class="error"></p>
+  </div>
 
   <script>
-    const users = {
-      admin: 'admin',
-      customer1: 'customer1',
-      customer2: 'customer2',
-      customer3: 'customer3',
-      customer4: 'customer4',
-      customer5: 'customer5'
-    };
+    const loginForm = document.getElementById('loginForm');
+    const errorMessage = document.getElementById('errorMessage');
 
-    document.getElementById('loginForm').addEventListener('submit', function (e) {
+    const users = ['admin', 'customer1', 'customer2', 'customer3', 'customer4', 'customer5'];
+
+    loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
 
-      if (users[username] && password === users[username]) {
-        localStorage.setItem('username', username);
+      if (users.includes(username) && password === username) {
+        sessionStorage.setItem('loggedInUser', username);
         if (username === 'admin') {
           window.location.href = 'admin.html';
         } else {
           window.location.href = 'home.html';
         }
       } else {
-        alert('Invalid credentials. Password must match the username.');
+        errorMessage.textContent = 'Invalid credentials. Please try again.';
       }
     });
   </script>
