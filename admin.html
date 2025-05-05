@@ -2,91 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ProjectionsGo - Admin Panel </title>
+  <title>Admin Panel</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <header>
     <h1>Admin Panel</h1>
-    <p>Assign shows to users</p>
   </header>
-
   <main>
+    <h2>Assign Shows to Users</h2>
     <form id="assignForm">
-      <label for="userSelect">Select User:</label>
-      <select id="userSelect" required>
-        <option value="" disabled selected>Choose a user</option>
-        <option value="customer1">customer1</option>
-        <option value="customer2">customer2</option>
-        <option value="customer3">customer3</option>
-        <option value="customer4">customer4</option>
-        <option value="customer5">customer5</option>
-      </select>
-
-      <label for="showSelect">Select Show:</label>
-      <select id="showSelect" required>
-        <option value="" disabled selected>Choose a show</option>
-        <option value="RigCheck">Rig Check</option>
-        <option value="Trashion">Trashion 25</option>
-      </select>
-
+      <input type="text" id="newUsername" placeholder="Username" required />
+      <input type="text" id="newShow" placeholder="Show Name" required />
       <button type="submit">Assign Show</button>
     </form>
-
-    <div id="assignedList">
-      <h2>Current Assignments</h2>
-      <ul id="assignmentDisplay"></ul>
-    </div>
+    <h2>Remove Show</h2>
+    <form id="removeForm">
+      <input type="text" id="removeUsername" placeholder="Username" required />
+      <input type="text" id="removeShow" placeholder="Show Name" required />
+      <button type="submit">Remove Show</button>
+    </form>
   </main>
-
   <script>
-    const assignments = JSON.parse(localStorage.getItem('assignments')) || {};
+    const users = {
+      alice: ['RigCheck'],
+      bob: ['Trashion']
+    };
 
-    // Display current assignments
-    function updateAssignmentList() {
-      const list = document.getElementById('assignmentDisplay');
-      list.innerHTML = '';
-      for (const [user, shows] of Object.entries(assignments)) {
-        shows.forEach(show => {
-          const li = document.createElement('li');
-          li.textContent = `${user} ➜ ${show}`;
-          list.appendChild(li);
-        });
-      }
-    }
-
-    // Assign a show to a user
-    document.getElementById('assignForm').addEventListener('submit', function (e) {
+    document.getElementById('assignForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      const user = document.getElementById('userSelect').value;
-      const show = document.getElementById('showSelect').value;
-
-      if (!assignments[user]) assignments[user] = [];
-
-      if (!assignments[user].includes(show)) {
-        assignments[user].push(show);
-        localStorage.setItem('assignments', JSON.stringify(assignments));
-        updateAssignmentList();
-        alert(`Assigned ${show} to ${user}`);
-      } else {
-        alert(`${user} already has ${show} assigned.`);
-      }
-
-      document.getElementById('assignForm').reset();
-    });
-
-    // Auto-assign RigCheck to all users on first load
-    const users = ['customer1', 'customer2', 'customer3', 'customer4', 'customer5'];
-    users.forEach(user => {
-      if (!assignments[user]) assignments[user] = [];
-      if (!assignments[user].includes('RigCheck')) {
-        assignments[user].push('RigCheck');
+      const username = document.getElementById('newUsername').value.trim();
+      const show = document.getElementById('newShow').value.trim();
+      if (username && show) {
+        if (!users[username]) {
+          users[username] = [];
+        }
+        if (!users[username].includes(show)) {
+          users[username].push(show);
+          alert(`Assigned show "${show}" to user "${username}".`);
+        } else {
+          alert(`User "${username}" already has show "${show}".`);
+        }
       }
     });
-    localStorage.setItem('assignments', JSON.stringify(assignments));
 
-    updateAssignmentList();
+    document.getElementById('removeForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = document.getElementById('removeUsername').value.trim();
+      const show = document.getElementById('removeShow').value.trim();
+      if (username && show) {
+        if (users[username] && users[username].includes(show)) {
+          users[username] = users[username].filter(s => s !== show);
+          alert(`Removed show "${show}" from user "${username}".`);
+        } else {
+          alert(`User "${username}" does not have show "${show}".`);
+        }
+      }
+    });
   </script>
 </body>
 </html>
-
