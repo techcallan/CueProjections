@@ -1,38 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Home - CueProjections</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <title>Home</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="container">
+  <header>
     <h1>Welcome to CueProjections</h1>
-    <div id="showList"></div>
-  </div>
-
+  </header>
+  <main>
+    <form id="loginForm">
+      <label for="username">Enter your username:</label>
+      <input type="text" id="username" required />
+      <button type="submit">Login</button>
+    </form>
+  </main>
   <script>
-    const assignedShows = {
-      customer1: ["RigCheck"],
-      customer2: ["RigCheck"],
-      customer3: ["RigCheck"],
-      customer4: ["RigCheck"],
-      customer5: ["RigCheck"]
-    };
-
-    const user = localStorage.getItem("user");
-    const shows = assignedShows[user] || [];
-
-    const showList = document.getElementById("showList");
-    shows.forEach(show => {
-      const btn = document.createElement("button");
-      btn.textContent = `Start Show: ${show}`;
-      btn.onclick = () => {
-        localStorage.setItem("activeShow", show);
-        window.open("viewer.html", "_blank");
-        window.location.href = "projections.html";
-      };
-      showList.appendChild(btn);
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      if (username) {
+        localStorage.setItem('username', username);
+        window.location.href = 'projections.html';
+      }
     });
   </script>
 </body>
 </html>
+
