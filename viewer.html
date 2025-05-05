@@ -1,51 +1,90 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Viewer</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      background: black;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    #viewerContainer {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: black;
+    }
+
+    #viewerImage, #viewerVideo {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+
+    #fullscreenBtn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: #ffeb3b;
+      color: black;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 9999;
+    }
+  </style>
 </head>
-<body class="viewer">
-  <button id="fullscreenBtn" onclick="enterFullscreen()">Fullscreen</button>
-  <div id="displayArea" class="full-display"></div>
+<body>
+  <div id="viewerContainer">
+    <img id="viewerImage" />
+    <video id="viewerVideo" autoplay loop muted></video>
+    <button id="fullscreenBtn">Fullscreen</button>
+  </div>
 
   <script>
-    const displayArea = document.getElementById("displayArea");
-    const btn = document.getElementById("fullscreenBtn");
+    const img = document.getElementById('viewerImage');
+    const vid = document.getElementById('viewerVideo');
+    const fsBtn = document.getElementById('fullscreenBtn');
 
-    window.addEventListener("message", (event) => {
-      const data = event.data;
-      displayArea.innerHTML = "";
-      if (data.cue === "blackout") {
-        displayArea.style.backgroundColor = "black";
-        return;
-      }
-
-      const file = data.cue;
-      const show = data.show;
-      const ext = file.split('.').pop();
-      if (ext === "mp4") {
-        const video = document.createElement("video");
-        video.src = `assets/${show}/${file}`;
-        video.autoplay = true;
-        video.loop = true;
-        video.muted = true;
-        video.classList.add("full-content");
-        displayArea.appendChild(video);
-      } else {
-        const img = document.createElement("img");
-        img.src = `assets/${show}/${file}`;
-        img.classList.add("full-content");
-        displayArea.appendChild(img);
+    window.addEventListener('message', (e) => {
+      const { type, src, mediaType } = e.data;
+      if (type === 'cueChange') {
+        if (mediaType === 'image') {
+          vid.style.display = 'none';
+          vid.pause();
+          img.src = src;
+          img.style.display = 'block';
+        } else if (mediaType === 'video') {
+          img.style.display = 'none';
+          img.src = '';
+          vid.src = src;
+          vid.style.display = 'block';
+          vid.play();
+        }
       }
     });
 
-    function enterFullscreen() {
-      btn.style.display = "none";
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
+    fsBtn.addEventListener('click', () => {
+      const viewer = document.documentElement;
+      if (viewer.requestFullscreen) {
+        viewer.requestFullscreen();
+      } else if (viewer.webkitRequestFullscreen) {
+        viewer.webkitRequestFullscreen();
+      } else if (viewer.msRequestFullscreen) {
+        viewer.msRequestFullscreen();
       }
-    }
+      fsBtn.style.display = 'none';
+    });
   </script>
 </body>
 </html>
-
