@@ -8,52 +8,44 @@
 <body>
   <div class="main-container">
     <h1>Welcome to CueProjections</h1>
-    <h3 id="welcomeUser">Welcome!</h3>
-    <ul id="showList"></ul>
+    <div id="showList"></div>
   </div>
 
   <script>
-    const username = localStorage.getItem('username');
-    const welcomeEl = document.getElementById('welcomeUser');
-    const list = document.getElementById('showList');
-
-    if (!username) {
-      welcomeEl.textContent = "No user logged in.";
-      list.innerHTML = "<li>Please login at <a href='index.html'>index.html</a>.</li>";
-    } else {
-      welcomeEl.textContent = `Logged in as ${username}`;
-
-      const defaultShows = {
-        admin: [],
-        customer1: ['RigCheck'],
-        customer2: ['RigCheck'],
-        customer3: ['RigCheck'],
-        customer4: ['RigCheck'],
-        customer5: ['RigCheck']
-      };
-
-      const assignedShows = JSON.parse(localStorage.getItem('assignedShows')) || defaultShows;
-      const shows = assignedShows[username] || [];
-
-      if (shows.length === 0) {
-        list.innerHTML = "<li>No shows assigned.</li>";
-      } else {
-        shows.forEach(show => {
-          const li = document.createElement('li');
-          li.innerHTML = `
-            <strong>${show}</strong>
-            <button onclick="startShow('${show}')">Start Show</button>
-          `;
-          list.appendChild(li);
-        });
-      }
+    const user = localStorage.getItem('username');
+    if (!user || user === 'admin') {
+      window.location.href = 'index.html';
     }
 
-    function startShow(show) {
-      localStorage.setItem('selectedShow', show);
-      window.open('viewer.html', 'viewer');
+    // Every user gets RigCheck by default
+    const predefinedAssignments = {
+      'customer1': ['RigCheck', 'Trashion'],
+      'customer2': ['RigCheck'],
+      'customer3': ['RigCheck'],
+      'customer4': ['RigCheck'],
+      'customer5': ['RigCheck']
+    };
+
+    const shows = predefinedAssignments[user] || ['RigCheck'];
+
+    const showListDiv = document.getElementById('showList');
+    shows.forEach(show => {
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <h3>${show}</h3>
+        <button onclick="startShow('${show}')">Start Show</button>
+        <hr>
+      `;
+      showListDiv.appendChild(div);
+    });
+
+    function startShow(showName) {
+      localStorage.setItem('currentShow', showName);
+      localStorage.setItem('currentCue', '0');
+      window.open('viewer.html', 'viewerWindow');
       window.location.href = 'projections.html';
     }
   </script>
 </body>
 </html>
+
