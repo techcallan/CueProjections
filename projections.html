@@ -2,117 +2,137 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Projections</title>
+  <title>Projections Control</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
-    .preview-img, .preview-video {
-      max-width: 100%;
-      max-height: 300px;
-      object-fit: contain;
-      border: 2px solid #ccc;
-      border-radius: 5px;
+    .cue-preview {
+      max-width: 45%;
+      height: auto;
     }
-
-    .preview-box {
-      flex: 1;
-      text-align: center;
+    .cue-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
     }
   </style>
 </head>
-<body>
-  <div class="main-container">
-    <h1 id="showTitle">Projections Control</h1>
-    <div class="preview-container">
-      <div class="preview-box">
-        <h3>Current Cue</h3>
-        <div id="currentPreview"></div>
-      </div>
-      <div class="preview-box">
-        <h3>Next Cue</h3>
-        <div id="nextPreview"></div>
-      </div>
+<body class="main-container">
+  <h1>Projections Control Panel</h1>
+  
+  <div id="showLoaderContainer" style="display:none;">
+    <label>Select a show:</label>
+    <select id="showSelect">
+      <option value="RigCheck">RigCheck</option>
+      <option value="Trashion">Trashion</option>
+      <!-- Add more shows here -->
+    </select>
+    <button onclick="loadShow()">Load Show</button>
+  </div>
+
+  <h3 id="showTitle"></h3>
+  
+  <div class="cue-container">
+    <div>
+      <h3>Current Cue</h3>
+      <img id="currentCue" class="cue-preview" src="">
     </div>
-    <div class="button-group">
-      <button id="backBtn">Back</button>
-      <button id="goBtn">Go</button>
-      <button id="blackoutBtn">Blackout</button>
+    <div>
+      <h3>Next Cue</h3>
+      <img id="nextCue" class="cue-preview" src="">
     </div>
   </div>
 
+  <div class="button-group">
+    <button onclick="prevCue()">Back</button>
+    <button onclick="goCue()">GO</button>
+    <button onclick="toggleBlackout()" id="blackoutBtn">Blackout</button>
+    <button onclick="endShow()">End Show</button>
+  </div>
+
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const showName = urlParams.get('show') || 'RigCheck';
-    document.getElementById('showTitle').innerText = `Projections Control - ${showName}`;
-
-    const viewerWindow = window.open('viewer.html', 'viewerWindow');
-
-    const cues = [{ type: 'blank', src: '' }];
-    let index = 1;
-
-    while (index <= 50) {
-      const imagePath = `assets/${showName}/${index}.jpg`;
-      const videoPath = `assets/${showName}/${index}.mp4`;
-
-      cues.push({ type: 'image', src: imagePath });
-      cues.push({ type: 'video', src: videoPath });
-      index++;
-    }
-
-    let currentCueIndex = 0;
+    let currentCue = 0;
+    let showName = localStorage.getItem('currentShow');
+    let cues = [];
     let blackout = false;
 
-    function createMediaElement(cue) {
-      if (cue.type === 'image') {
-        const img = document.createElement('img');
-        img.src = cue.src;
-        img.className = 'preview-img';
-        return img;
-      } else if (cue.type === 'video') {
-        const video = document.createElement('video');
-        video.src = cue.src;
-        video.className = 'preview-video';
-        video.muted = true;
-        video.autoplay = true;
-        video.loop = true;
-        return video;
-      }
-      return document.createElement('div');
+    if (!showName) {
+      document.getElementById('showLoaderContainer').style.display = 'block';
+    } else {
+      document.getElementById('showTitle').textContent = `Loaded Show: ${showName}`;
+      loadCueList(showName);
     }
 
-    function updatePreviews() {
-      const currentCue = cues[currentCueIndex] || { type: 'blank', src: '' };
-      const nextCue = cues[currentCueIndex + 1] || { type: 'blank', src: '' };
+    function loadShow() {
+      showName = document.getElementById('showSelect').value;
+      localStorage.setItem('currentShow', showName);
+      localStorage.setItem('currentCue', '0');
+      document.getElementById('showLoaderContainer').style.display = 'none';
+      document.getElementById('showTitle').textContent = `Loaded Show: ${showName}`;
+      loadCueList(showName);
+    }
 
-      document.getElementById('currentPreview').innerHTML = '';
-      document.getElementById('nextPreview').innerHTML = '';
-      document.getElementById('currentPreview').appendChild(createMediaElement(currentCue));
-      document.getElementById('nextPreview').appendChild(createMediaElement(nextCue));
+    function loadCueList(show) {
+      fetch(`assets/${show}/`)
+        .then(() => {
+          const exts = ['jpg', 'jpeg', 'png', 'gif', 'mp4'];
+          let i = 0;
+          cues = [];
+          const preload = () => {
+            const testImg = new Image();
+            testImg.onload = () => {
+              cues.push(`assets/${show}/${i}.jpg`);
+              i++;
+              preload();
+            };
+            testImg.onerror = () => {
+              updateCues();
+            };
+            testImg.src = `assets/${show}/${i}.jpg`;
+          };
+          preload();
+        })
+        .catch(() => alert('Could not load show.'));
+    }
 
-      if (viewerWindow) {
-        viewerWindow.postMessage({ cue: currentCue }, '*');
+    function updateCues() {
+      document.getElementById('currentCue').src = cues[currentCue] || '';
+      document.getElementById('nextCue').src = cues[currentCue + 1] || '';
+      const viewer = window.open('', 'viewerWindow');
+      if (viewer) {
+        viewer.postMessage({ cue: cues[currentCue] }, '*');
       }
     }
 
-    document.getElementById('backBtn').onclick = () => {
-      if (currentCueIndex > 0) {
-        currentCueIndex--;
-        updatePreviews();
+    function goCue() {
+      if (currentCue < cues.length - 1) {
+        currentCue++;
+        updateCues();
       }
-    };
+    }
 
-    document.getElementById('goBtn').onclick = () => {
-      if (currentCueIndex < cues.length - 1) {
-        currentCueIndex++;
-        updatePreviews();
+    function prevCue() {
+      if (currentCue > 0) {
+        currentCue--;
+        updateCues();
       }
-    };
+    }
 
-    document.getElementById('blackoutBtn').onclick = () => {
+    function toggleBlackout() {
       blackout = !blackout;
-      if (viewerWindow) viewerWindow.postMessage({ blackout }, '*');
-    };
+      const viewer = window.open('', 'viewerWindow');
+      if (viewer) {
+        viewer.postMessage({ blackout: blackout }, '*');
+      }
+      document.getElementById('blackoutBtn').textContent = blackout ? 'Turn Off Blackout' : 'Blackout';
+    }
 
-    updatePreviews();
+    function endShow() {
+      window.location.href = 'home.html';
+    }
+
+    window.addEventListener('load', () => {
+      currentCue = parseInt(localStorage.getItem('currentCue') || '0');
+    });
   </script>
 </body>
 </html>
