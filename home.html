@@ -1,113 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>CueProjections – Home</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <style>
-    body {
-      background: #e0f7fa;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 2rem;
-      color: #004d40;
-    }
-
-    h1 {
-      color: #00796b;
-    }
-
-    .show-card {
-      background: #ffffff;
-      padding: 1.5rem;
-      margin: 1rem 0;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .show-title {
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-
-    .start-btn {
-      background-color: #00bcd4;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      margin-top: 10px;
-      cursor: pointer;
-      border-radius: 5px;
-      font-weight: bold;
-    }
-
-    .start-btn:hover {
-      background-color: #008ba3;
-    }
-
-    #logout {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: #f44336;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <button id="logout">Logout</button>
-  <h1>Welcome to CueProjections!</h1>
-  <div id="showList"></div>
-
+  <title>CueProjections - Home</title>
+  <link rel="stylesheet" href="css/style.css">
   <script>
+    const user = localStorage.getItem("user");
     const assignedShows = {
-      "customer1": ["RigCheck", "Trashion"],
-      "customer2": ["RigCheck"],
-      "customer3": ["RigCheck"],
-      "customer4": ["RigCheck"],
-      "customer5": ["RigCheck"]
+      customer1: ["RigCheck", "Trashion"],
+      customer2: ["RigCheck"],
+      customer3: ["RigCheck"],
+      customer4: ["RigCheck"],
+      customer5: ["RigCheck"],
+      admin: []
     };
-
-    const currentUser = localStorage.getItem("user");
-    if (!currentUser) {
-      window.location.href = "index.html";
-    }
-
-    if (currentUser === "admin") {
-      window.location.href = "admin.html";
-    }
-
-    document.getElementById("logout").onclick = () => {
-      localStorage.removeItem("user");
-      window.location.href = "index.html";
-    };
-
-    const showContainer = document.getElementById("showList");
-
-    const shows = assignedShows[currentUser] || [];
-    if (shows.length === 0) {
-      showContainer.innerHTML = "<p>No shows assigned.</p>";
-    } else {
-      shows.forEach(show => {
-        const div = document.createElement("div");
-        div.className = "show-card";
-        div.innerHTML = `
-          <div class="show-title">${show}</div>
-          <button class="start-btn" onclick="startShow('${show}')">START SHOW</button>
-        `;
-        showContainer.appendChild(div);
-      });
-    }
 
     function startShow(showName) {
-      localStorage.setItem("selectedShow", showName);
+      localStorage.setItem("currentShow", showName);
       window.open("viewer.html", "_blank");
       window.location.href = "projections.html";
     }
+
+    window.onload = function () {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      const showList = document.getElementById("showList");
+      const shows = assignedShows[user] || [];
+      shows.forEach(show => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <h3>${show}</h3>
+          <button onclick="startShow('${show}')">Start Show</button>
+        `;
+        showList.appendChild(li);
+      });
+    };
   </script>
+</head>
+<body>
+  <div class="main-container">
+    <h1>Welcome to CueProjections</h1>
+    <ul id="showList"></ul>
+  </div>
 </body>
 </html>
+
