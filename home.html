@@ -1,49 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>CueProjections - Home</title>
+  <meta charset="UTF-8">
+  <title>Home</title>
   <link rel="stylesheet" href="css/style.css">
-  <script>
-    const user = localStorage.getItem("user");
-    const assignedShows = {
-      customer1: ["RigCheck", "Trashion"],
-      customer2: ["RigCheck"],
-      customer3: ["RigCheck"],
-      customer4: ["RigCheck"],
-      customer5: ["RigCheck"],
-      admin: []
-    };
-
-    function startShow(showName) {
-      localStorage.setItem("currentShow", showName);
-      window.open("viewer.html", "_blank");
-      window.location.href = "projections.html";
-    }
-
-    window.onload = function () {
-      if (!user) {
-        window.location.href = "index.html";
-        return;
-      }
-
-      const showList = document.getElementById("showList");
-      const shows = assignedShows[user] || [];
-      shows.forEach(show => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <h3>${show}</h3>
-          <button onclick="startShow('${show}')">Start Show</button>
-        `;
-        showList.appendChild(li);
-      });
-    };
-  </script>
 </head>
 <body>
   <div class="main-container">
     <h1>Welcome to CueProjections</h1>
-    <ul id="showList"></ul>
+    <p>Loading your assigned show...</p>
   </div>
+
+  <script>
+    // Simulate user and assigned show
+    const user = 'customer1';
+    const assignedShow = 'RigCheck';
+
+    // Store assigned show in localStorage
+    localStorage.setItem('assignedShow', assignedShow);
+
+    // Redirect to projections page
+    window.location.href = 'projections.html';
+  </script>
 </body>
 </html>
 
