@@ -2,109 +2,180 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Projections</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Projections Control</title>
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .preview-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .preview-box {
+      flex: 1;
+      text-align: center;
+      background: #333;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .preview-box img {
+      max-height: 200px;
+      max-width: 100%;
+      object-fit: contain;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    #cueInfo {
+      text-align: center;
+      font-size: 1.2em;
+      margin-bottom: 15px;
+      color: white;
+    }
+
+    #showSelectModal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #showSelectModal select, #showSelectModal button {
+      width: 300px;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Projections</h1>
-  </header>
-  <main>
-    <div id="showSelection">
-      <label for="showSelect">Select Show:</label>
+  <div class="main-container">
+    <h1>Projections Control</h1>
+    <div id="cueInfo">Loading show...</div>
+
+    <div class="preview-container">
+      <div class="preview-box">
+        <h3>Current Cue</h3>
+        <img id="currentPreview" src="" alt="Current Cue">
+      </div>
+      <div class="preview-box">
+        <h3>Next Cue</h3>
+        <img id="nextPreview" src="" alt="Next Cue">
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button onclick="goBack()">⬅️ BACK</button>
+      <button onclick="goCue()">▶️ GO</button>
+      <button onclick="toggleBlackout()" id="blackoutBtn">⚫ BLACKOUT</button>
+      <button onclick="endShow()">⛔ END SHOW</button>
+    </div>
+  </div>
+
+  <div id="showSelectModal">
+    <div class="login-container">
+      <h2>Select a Show</h2>
       <select id="showSelect"></select>
+      <button onclick="loadShow()">Load Show</button>
     </div>
-    <div id="cueControls">
-      <button id="prevCue">Previous Cue</button>
-      <button id="nextCue">Next Cue</button>
-    </div>
-    <div id="previewArea"></div>
-  </main>
+  </div>
+
   <script>
-    const users = {
-      alice: ['RigCheck'],
-      bob: ['Trashion']
-    };
+    let currentCue = 0;
+    let showImages = [];
+    let showName = '';
+    let isBlackout = false;
 
-    const shows = {
-      RigCheck: ['1.png', '2.mp4', '3.png', '4.mp4'],
-      Trashion: ['1.mp4', '2.png', '3.mp4']
-    };
-
-    const username = localStorage.getItem('username');
-    if (!username || !users[username]) {
-      window.location.href = 'home.html';
-    }
-
+    const showSelectModal = document.getElementById('showSelectModal');
     const showSelect = document.getElementById('showSelect');
-    const previewArea = document.getElementById('previewArea');
-    let cues = [];
-    let currentCueIndex = 0;
+    const currentPreview = document.getElementById('currentPreview');
+    const nextPreview = document.getElementById('nextPreview');
+    const cueInfo = document.getElementById('cueInfo');
 
-    // Populate show selection
-    users[username].forEach(show => {
-      const option = document.createElement('option');
-      option.value = show;
-      option.textContent = show;
-      showSelect.appendChild(option);
-    });
+    const userShows = JSON.parse(localStorage.getItem("assignedShows")) || [];
 
-    function renderCue(cue) {
-      const ext = cue.split('.').pop().toLowerCase();
-      previewArea.innerHTML = '';
-      if (ext === 'mp4') {
-        const video = document.createElement('video');
-        video.src = `assets/${showSelect.value}/${cue}`;
-        video.autoplay = true;
-        video.loop = true;
-        video.muted = true;
-        video.controls = false;
-        video.style.maxWidth = '100%';
-        previewArea.appendChild(video);
-        sendMessageToViewer(video.src, 'video');
-      } else {
-        const img = document.createElement('img');
-        img.src = `assets/${showSelect.value}/${cue}`;
-        img.style.maxWidth = '100%';
-        previewArea.appendChild(img);
-        sendMessageToViewer(img.src, 'image');
-      }
+    // Load show options
+    window.onload = () => {
+      userShows.forEach(show => {
+        const opt = document.createElement("option");
+        opt.value = show;
+        opt.textContent = show;
+        showSelect.appendChild(opt);
+      });
+    };
+
+    function loadShow() {
+      showName = showSelect.value;
+      fetchShowAssets(showName);
+      showSelectModal.style.display = 'none';
     }
 
-    function sendMessageToViewer(src, type) {
-      const viewerWindow = window.open('viewer.html', 'viewerWindow');
-      viewerWindow.postMessage({ type: 'cueChange', src, mediaType: type }, '*');
+    function fetchShowAssets(showFolder) {
+      // Dummy file list simulation (replace with dynamic fetching if needed)
+      const assets = {
+        RigCheck: ["1.png", "2.png", "3.png", "4.mp4"],
+        Trashion: ["1.png", "2.png", "3.png"]
+      };
+
+      showImages = (assets[showFolder] || []).map(file => `assets/${showFolder}/${file}`);
+      updatePreviews();
+      sendToViewer();
     }
 
-    document.getElementById('prevCue').addEventListener('click', () => {
-      if (currentCueIndex > 0) {
-        currentCueIndex--;
-        renderCue(cues[currentCueIndex]);
-      }
-    });
+    function updatePreviews() {
+      if (!showImages.length) return;
 
-    document.getElementById('nextCue').addEventListener('click', () => {
-      if (currentCueIndex < cues.length - 1) {
-        currentCueIndex++;
-        renderCue(cues[currentCueIndex]);
-      }
-    });
+      const currentSrc = showImages[currentCue] || '';
+      const nextSrc = showImages[currentCue + 1] || '';
 
-    showSelect.addEventListener('change', () => {
-      const selectedShow = showSelect.value;
-      cues = shows[selectedShow];
-      currentCueIndex = 0;
-      renderCue(cues[currentCueIndex]);
-    });
+      currentPreview.src = currentSrc;
+      nextPreview.src = nextSrc;
+      cueInfo.textContent = `Cue ${currentCue} — ${extractTitle(currentSrc)}`;
+    }
 
-    // Initialize with first show
-    if (showSelect.options.length > 0) {
-      showSelect.selectedIndex = 0;
-      const selectedShow = showSelect.value;
-      cues = shows[selectedShow];
-      currentCueIndex = 0;
-      renderCue(cues[currentCueIndex]);
+    function extractTitle(path) {
+      return path.split('/').pop();
+    }
+
+    function goCue() {
+      if (isBlackout) toggleBlackout();
+      if (currentCue < showImages.length - 1) currentCue++;
+      updatePreviews();
+      sendToViewer();
+    }
+
+    function goBack() {
+      if (isBlackout) toggleBlackout();
+      if (currentCue > 0) currentCue--;
+      updatePreviews();
+      sendToViewer();
+    }
+
+    function toggleBlackout() {
+      isBlackout = !isBlackout;
+      const cue = isBlackout ? 'blackout' : showImages[currentCue];
+      document.getElementById('blackoutBtn').textContent = isBlackout ? '🔆 TURN OFF BLACKOUT' : '⚫ BLACKOUT';
+      localStorage.setItem("cue", cue);
+    }
+
+    function sendToViewer() {
+      localStorage.setItem("cue", showImages[currentCue]);
+    }
+
+    function endShow() {
+      window.location.href = "home.html";
     }
   </script>
 </body>
 </html>
+
