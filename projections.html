@@ -5,152 +5,159 @@
   <title>Projections Control</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    .cue-preview {
-      max-width: 45%;
-      height: auto;
+    .preview-container img, .preview-container video {
+      max-width: 100%;
+      max-height: 200px;
+      object-fit: contain;
     }
-
-    .cue-container {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
+    #viewerWindow {
+      display: none;
     }
   </style>
 </head>
-<body class="main-container">
-  <h1>Projections Control Panel</h1>
-
-  <h3 id="showTitle"></h3>
-
-  <div class="cue-container">
-    <div>
-      <h3>Current Cue</h3>
-      <div id="currentCuePreview" class="cue-preview"></div>
+<body>
+  <div class="main-container">
+    <h1>Projections Control</h1>
+    <div id="showLoader">
+      <label for="showSelect">Load Show:</label>
+      <select id="showSelect">
+        <option value="">-- Select a show --</option>
+      </select>
+      <button onclick="loadShow()">Load</button>
     </div>
-    <div>
-      <h3>Next Cue</h3>
-      <div id="nextCuePreview" class="cue-preview"></div>
-    </div>
-  </div>
 
-  <div class="button-group">
-    <button onclick="prevCue()">Back</button>
-    <button onclick="goCue()">GO</button>
-    <button onclick="toggleBlackout()" id="blackoutBtn">Blackout</button>
-    <button onclick="endShow()">End Show</button>
+    <div id="controlPanel" style="display:none;">
+      <h3 id="currentCueTitle">Cue 0 (Blank)</h3>
+
+      <div class="preview-container">
+        <div>
+          <h4>Current Cue Preview</h4>
+          <div id="currentPreview"></div>
+        </div>
+        <div>
+          <h4>Next Cue Preview</h4>
+          <div id="nextPreview"></div>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button onclick="prevCue()">Back</button>
+        <button onclick="goCue()">GO</button>
+        <button onclick="toggleBlackout()">Blackout</button>
+        <button onclick="endShow()">End Show</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    let showName = localStorage.getItem("currentShow") || "RigCheck";
-    let cueList = [""]; // cue 0 = blank
-    let currentCue = 0;
-    let blackout = false;
+    let viewerWindow;
+    let cues = [];
+    let currentCueIndex = 0;
+    let isBlackout = false;
+    let lastCueBeforeBlackout = 0;
 
-    document.getElementById("showTitle").innerText = `Loaded Show: ${showName}`;
-    openViewer();
-    loadCues();
+    const showSelect = document.getElementById("showSelect");
 
-    function loadCues() {
-      const basePath = `assets/${showName}/`;
-      const formats = ["png", "jpg", "jpeg", "mp4"];
-      let index = 1;
+    const shows = {
+      "RigCheck": ["1.png", "2.png", "3.png", "4.mp4"],
+      "Trashion": []
+    };
 
-      function tryLoadNext() {
-        if (index > 99) return updateCues();
+    window.onload = () => {
+      Object.keys(shows).forEach(show => {
+        const option = document.createElement("option");
+        option.value = show;
+        option.textContent = show;
+        showSelect.appendChild(option);
+      });
+    };
 
-        let loaded = false;
-        formats.forEach(ext => {
-          let path = `${basePath}${index}.${ext}`;
-          let img = new Image();
-          img.onload = () => {
-            if (!loaded) {
-              cueList.push(path);
-              index++;
-              tryLoadNext();
-              loaded = true;
-            }
-          };
-          img.onerror = () => {
-            // If it's mp4, push it directly as it won't load in Image
-            if (ext === "mp4" && !loaded) {
-              fetch(path)
-                .then(res => {
-                  if (res.ok) {
-                    cueList.push(path);
-                    index++;
-                    tryLoadNext();
-                  }
-                })
-                .catch(() => {});
-            }
-          };
-          img.src = path;
-        });
-      }
+    function loadShow() {
+      const selectedShow = showSelect.value;
+      if (!selectedShow) return alert("Select a show");
 
-      tryLoadNext();
+      cues = shows[selectedShow].map(file => `assets/${selectedShow}/${file}`);
+      cues.unshift(""); // cue 0 = blank
+      currentCueIndex = 0;
+      updatePreviews();
+
+      document.getElementById("controlPanel").style.display = "block";
+
+      viewerWindow = window.open("viewer.html", "viewerWindow");
+
+      setTimeout(() => {
+        sendCue(); // send blank cue initially
+      }, 500);
     }
 
-    function updateCues() {
-      const current = cueList[currentCue] || "";
-      const next = cueList[currentCue + 1] || "";
+    function updatePreviews() {
+      const current = cues[currentCueIndex];
+      const next = cues[currentCueIndex + 1];
 
-      renderCue(current, "currentCuePreview");
-      renderCue(next, "nextCuePreview");
-
-      // Send to viewer
-      const viewer = window.open("viewer.html", "viewerWindow");
-      if (viewer) {
-        viewer.postMessage({ cue: current, blackout }, "*");
-      }
+      updatePreviewElement("currentPreview", current);
+      updatePreviewElement("nextPreview", next);
+      document.getElementById("currentCueTitle").textContent = `Cue ${currentCueIndex}`;
     }
 
-    function renderCue(cuePath, elementId) {
-      const el = document.getElementById(elementId);
-      el.innerHTML = "";
-      if (cuePath.endsWith(".mp4")) {
-        const video = document.createElement("video");
-        video.src = cuePath;
-        video.controls = false;
-        video.autoplay = true;
-        video.loop = true;
-        video.muted = true;
-        video.style.maxWidth = "100%";
-        el.appendChild(video);
-      } else if (cuePath) {
-        const img = document.createElement("img");
-        img.src = cuePath;
-        img.className = "cue-preview";
-        el.appendChild(img);
+    function updatePreviewElement(containerId, cuePath) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+
+      if (!cuePath) return;
+
+      const isVideo = cuePath.endsWith(".mp4");
+
+      const el = isVideo ? document.createElement("video") : document.createElement("img");
+      el.src = cuePath;
+      if (isVideo) {
+        el.autoplay = true;
+        el.loop = true;
+        el.muted = true;
       }
+      container.appendChild(el);
+    }
+
+    function sendCue() {
+      if (!viewerWindow || viewerWindow.closed) {
+        alert("Viewer window not open!");
+        return;
+      }
+
+      const current = cues[currentCueIndex];
+      viewerWindow.postMessage({ cue: current, blackout: isBlackout }, "*");
     }
 
     function goCue() {
-      if (currentCue < cueList.length - 1) {
-        currentCue++;
-        updateCues();
+      if (isBlackout) toggleBlackout(); // exit blackout on GO
+
+      if (currentCueIndex < cues.length - 1) {
+        currentCueIndex++;
+        sendCue();
+        updatePreviews();
       }
     }
 
     function prevCue() {
-      if (currentCue > 0) {
-        currentCue--;
-        updateCues();
+      if (currentCueIndex > 0) {
+        currentCueIndex--;
+        sendCue();
+        updatePreviews();
       }
     }
 
     function toggleBlackout() {
-      blackout = !blackout;
-      updateCues();
-      document.getElementById("blackoutBtn").innerText = blackout ? "Turn Off Blackout" : "Blackout";
+      if (!isBlackout) {
+        lastCueBeforeBlackout = currentCueIndex;
+        isBlackout = true;
+        viewerWindow.postMessage({ blackout: true }, "*");
+      } else {
+        isBlackout = false;
+        viewerWindow.postMessage({ cue: cues[lastCueBeforeBlackout], blackout: false }, "*");
+      }
     }
 
     function endShow() {
       window.location.href = "home.html";
-    }
-
-    function openViewer() {
-      window.open("viewer.html", "viewerWindow");
     }
   </script>
 </body>
