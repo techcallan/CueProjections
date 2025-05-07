@@ -1,54 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>CueProjections - Admin</title>
+  <meta charset="UTF-8">
+  <title>Admin</title>
   <link rel="stylesheet" href="css/style.css">
-  <script>
-    const users = ["customer1", "customer2", "customer3", "customer4", "customer5"];
-    const shows = ["RigCheck", "Trashion"];
-
-    const assignments = {
-      customer1: ["RigCheck", "Trashion"],
-      customer2: ["RigCheck"],
-      customer3: ["RigCheck"],
-      customer4: ["RigCheck"],
-      customer5: ["RigCheck"]
-    };
-
-    function assignShow() {
-      const user = document.getElementById("user").value;
-      const show = document.getElementById("show").value;
-      if (!assignments[user].includes(show)) {
-        assignments[user].push(show);
-        alert(`Assigned ${show} to ${user}`);
-      }
-    }
-
-    function removeShow() {
-      const user = document.getElementById("user").value;
-      const show = document.getElementById("show").value;
-      assignments[user] = assignments[user].filter(s => s !== show);
-      alert(`Removed ${show} from ${user}`);
-    }
-  </script>
 </head>
 <body>
   <div class="main-container">
     <h1>Admin Panel</h1>
-    <label>User:</label>
-    <select id="user">
-      ${users.map(u => `<option value="${u}">${u}</option>`).join("")}
+    <label for="userSelect">Select User:</label>
+    <select id="userSelect">
+      <option value="user1">User 1</option>
+      <option value="user2">User 2</option>
+      <!-- Add more users as needed -->
     </select>
 
-    <label>Show:</label>
-    <select id="show">
-      ${shows.map(s => `<option value="${s}">${s}</option>`).join("")}
+    <label for="showSelect">Select Show:</label>
+    <select id="showSelect">
+      <option value="show1">Show 1</option>
+      <option value="show2">Show 2</option>
+      <!-- Add more shows as needed -->
     </select>
 
-    <button onclick="assignShow()">Assign Show</button>
-    <button onclick="removeShow()">Remove Show</button>
+    <div class="button-group">
+      <button id="assignBtn">Assign Show</button>
+      <button id="removeBtn">Remove Show</button>
+    </div>
   </div>
+
+  <script>
+    const assignBtn = document.getElementById('assignBtn');
+    const removeBtn = document.getElementById('removeBtn');
+    const userSelect = document.getElementById('userSelect');
+    const showSelect = document.getElementById('showSelect');
+
+    assignBtn.addEventListener('click', () => {
+      const user = userSelect.value;
+      const show = showSelect.value;
+      // Implement logic to assign show to user
+      alert(`Assigned ${show} to ${user}`);
+    });
+
+    removeBtn.addEventListener('click', () => {
+      const user = userSelect.value;
+      const show = showSelect.value;
+      // Implement logic to remove show from user
+      alert(`Removed ${show} from ${user}`);
+    });
+  </script>
 </body>
 </html>
 
-</html>
