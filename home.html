@@ -17,8 +17,8 @@
       window.location.href = 'index.html';
     }
 
-    // Every user gets RigCheck by default
-    const predefinedAssignments = {
+    // Predefined assignments
+    const assignments = {
       'customer1': ['RigCheck', 'Trashion'],
       'customer2': ['RigCheck'],
       'customer3': ['RigCheck'],
@@ -26,7 +26,7 @@
       'customer5': ['RigCheck']
     };
 
-    const shows = predefinedAssignments[user] || ['RigCheck'];
+    const shows = assignments[user] || ['RigCheck'];
 
     const showListDiv = document.getElementById('showList');
     shows.forEach(show => {
