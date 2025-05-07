@@ -2,51 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Home</title>
+  <title>Home - CueProjections</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="main-container">
-    <h1>Welcome, <span id="usernameDisplay"></span></h1>
-    <h3>Your Assigned Shows:</h3>
+    <h1>Welcome to CueProjections</h1>
+    <h3 id="welcomeUser"></h3>
     <ul id="showList"></ul>
   </div>
 
   <script>
-    const assignedShows = {
-      'customer1': ['RigCheck', 'Trashion'],
-      'customer2': ['RigCheck'],
-      'customer3': ['RigCheck'],
-      'customer4': ['RigCheck'],
-      'customer5': ['RigCheck'],
-      'admin': [] // Admin shouldn’t see this page
-    };
-
     const username = localStorage.getItem('username');
-    if (!username || username === 'admin') {
+    if (!username) {
       window.location.href = 'index.html';
     }
 
-    document.getElementById('usernameDisplay').innerText = username;
+    const defaultShows = {
+      admin: [],
+      customer1: ['RigCheck'],
+      customer2: ['RigCheck'],
+      customer3: ['RigCheck'],
+      customer4: ['RigCheck'],
+      customer5: ['RigCheck']
+    };
 
-    const showList = document.getElementById('showList');
+    // Add Trashion manually to a user if needed in admin
+    const assignedShows = JSON.parse(localStorage.getItem('assignedShows')) || defaultShows;
+
+    document.getElementById('welcomeUser').textContent = `Logged in as ${username}`;
+
     const shows = assignedShows[username] || [];
+    const list = document.getElementById('showList');
 
     if (shows.length === 0) {
-      showList.innerHTML = '<li>No shows assigned.</li>';
+      list.innerHTML = `<li>No shows assigned.</li>`;
     } else {
       shows.forEach(show => {
         const li = document.createElement('li');
         li.innerHTML = `
-          ${show}
+          <strong>${show}</strong>
           <button onclick="startShow('${show}')">Start Show</button>
         `;
-        showList.appendChild(li);
+        list.appendChild(li);
       });
     }
 
-    function startShow(showName) {
-      window.location.href = `projections.html?show=${showName}`;
+    function startShow(show) {
+      localStorage.setItem('selectedShow', show);
+      window.open('viewer.html', 'viewer');
+      window.location.href = 'projections.html';
     }
   </script>
 </body>
