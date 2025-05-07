@@ -2,63 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Panel</title>
+  <title>CueProjections – Admin</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <header>
+  <div class="main-container">
     <h1>Admin Panel</h1>
-  </header>
-  <main>
-    <h2>Assign Shows to Users</h2>
-    <form id="assignForm">
-      <input type="text" id="newUsername" placeholder="Username" required />
-      <input type="text" id="newShow" placeholder="Show Name" required />
-      <button type="submit">Assign Show</button>
-    </form>
-    <h2>Remove Show</h2>
-    <form id="removeForm">
-      <input type="text" id="removeUsername" placeholder="Username" required />
-      <input type="text" id="removeShow" placeholder="Show Name" required />
-      <button type="submit">Remove Show</button>
-    </form>
-  </main>
+    <div id="assignments"></div>
+    <button id="logout">Logout</button>
+  </div>
+
   <script>
-    const users = {
-      alice: ['RigCheck'],
-      bob: ['Trashion']
+    const users = ["customer1", "customer2", "customer3", "customer4", "customer5"];
+    const shows = ["RigCheck", "Trashion"];
+    const assignmentsDiv = document.getElementById("assignments");
+
+    users.forEach(user => {
+      const userDiv = document.createElement("div");
+      userDiv.innerHTML = `<h3>${user}</h3>`;
+      const select = document.createElement("select");
+      select.multiple = true;
+      select.id = `select-${user}`;
+      shows.forEach(show => {
+        const option = document.createElement("option");
+        option.value = show;
+        option.text = show;
+        select.appendChild(option);
+      });
+      userDiv.appendChild(select);
+      assignmentsDiv.appendChild(userDiv);
+    });
+
+    document.getElementById("logout").onclick = () => {
+      localStorage.removeItem("user");
+      window.location.href = "index.html";
     };
-
-    document.getElementById('assignForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const username = document.getElementById('newUsername').value.trim();
-      const show = document.getElementById('newShow').value.trim();
-      if (username && show) {
-        if (!users[username]) {
-          users[username] = [];
-        }
-        if (!users[username].includes(show)) {
-          users[username].push(show);
-          alert(`Assigned show "${show}" to user "${username}".`);
-        } else {
-          alert(`User "${username}" already has show "${show}".`);
-        }
-      }
-    });
-
-    document.getElementById('removeForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const username = document.getElementById('removeUsername').value.trim();
-      const show = document.getElementById('removeShow').value.trim();
-      if (username && show) {
-        if (users[username] && users[username].includes(show)) {
-          users[username] = users[username].filter(s => s !== show);
-          alert(`Removed show "${show}" from user "${username}".`);
-        } else {
-          alert(`User "${username}" does not have show "${show}".`);
-        }
-      }
-    });
   </script>
 </body>
 </html>
