@@ -4,18 +4,32 @@
   <meta charset="UTF-8">
   <title>Projections</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .preview-img, .preview-video {
+      max-width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .preview-box {
+      flex: 1;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
   <div class="main-container">
     <h1>Projections Control</h1>
     <div class="preview-container">
-      <div>
+      <div class="preview-box">
         <h3>Current Cue</h3>
-        <img id="currentPreview" src="" alt="Current Cue Preview">
+        <div id="currentPreview"></div>
       </div>
-      <div>
+      <div class="preview-box">
         <h3>Next Cue</h3>
-        <img id="nextPreview" src="" alt="Next Cue Preview">
+        <div id="nextPreview"></div>
       </div>
     </div>
     <div class="button-group">
@@ -28,57 +42,75 @@
   <script>
     const cues = [
       { type: 'blank', src: '' },
-      { type: 'image', src: 'assets/show1/cue1.jpg' },
-      { type: 'video', src: 'assets/show1/cue2.mp4' },
-      // Add more cues as needed
+      { type: 'image', src: 'assets/RigCheck/1.jpg' },
+      { type: 'video', src: 'assets/RigCheck/2.mp4' },
+      { type: 'image', src: 'assets/RigCheck/3.jpg' },
+      { type: 'video', src: 'assets/RigCheck/4.mp4' },
     ];
+
     let currentCueIndex = 0;
     let blackout = false;
 
     const currentPreview = document.getElementById('currentPreview');
     const nextPreview = document.getElementById('nextPreview');
-    const backBtn = document.getElementById('backBtn');
-    const goBtn = document.getElementById('goBtn');
-    const blackoutBtn = document.getElementById('blackoutBtn');
+
+    const viewerWindow = window.open('viewer.html', 'viewerWindow');
+
+    function createMediaElement(cue) {
+      if (cue.type === 'image') {
+        const img = document.createElement('img');
+        img.src = cue.src;
+        img.className = 'preview-img';
+        return img;
+      } else if (cue.type === 'video') {
+        const video = document.createElement('video');
+        video.src = cue.src;
+        video.className = 'preview-video';
+        video.muted = true;
+        video.autoplay = true;
+        video.loop = true;
+        return video;
+      }
+      return document.createElement('div');
+    }
 
     function updatePreviews() {
       const currentCue = cues[currentCueIndex];
       const nextCue = cues[currentCueIndex + 1] || { type: 'blank', src: '' };
 
-      currentPreview.src = currentCue.src;
-      nextPreview.src = nextCue.src;
+      currentPreview.innerHTML = '';
+      nextPreview.innerHTML = '';
+      currentPreview.appendChild(createMediaElement(currentCue));
+      nextPreview.appendChild(createMediaElement(nextCue));
 
-      // Send current cue to viewer
-      const viewerWindow = window.open('', 'viewerWindow');
+      // Send cue to viewer
       if (viewerWindow) {
         viewerWindow.postMessage({ cue: currentCue }, '*');
       }
     }
 
-    backBtn.addEventListener('click', () => {
+    document.getElementById('backBtn').onclick = () => {
       if (currentCueIndex > 0) {
         currentCueIndex--;
         updatePreviews();
       }
-    });
+    };
 
-    goBtn.addEventListener('click', () => {
+    document.getElementById('goBtn').onclick = () => {
       if (currentCueIndex < cues.length - 1) {
         currentCueIndex++;
         updatePreviews();
       }
-    });
+    };
 
-    blackoutBtn.addEventListener('click', () => {
+    document.getElementById('blackoutBtn').onclick = () => {
       blackout = !blackout;
-      const viewerWindow = window.open('', 'viewerWindow');
       if (viewerWindow) {
         viewerWindow.postMessage({ blackout }, '*');
       }
-    });
+    };
 
-    // Initialize with cue 0
-    updatePreviews();
+    updatePreviews(); // Initial load
   </script>
 </body>
 </html>
