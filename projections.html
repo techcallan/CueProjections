@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Projections Control</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css" />
   <style>
     .cue-preview {
       max-width: 45%;
       height: auto;
     }
+
     .cue-container {
       display: flex;
       justify-content: space-between;
@@ -18,27 +19,17 @@
 </head>
 <body class="main-container">
   <h1>Projections Control Panel</h1>
-  
-  <div id="showLoaderContainer" style="display:none;">
-    <label>Select a show:</label>
-    <select id="showSelect">
-      <option value="RigCheck">RigCheck</option>
-      <option value="Trashion">Trashion</option>
-      <!-- Add more shows here -->
-    </select>
-    <button onclick="loadShow()">Load Show</button>
-  </div>
 
   <h3 id="showTitle"></h3>
-  
+
   <div class="cue-container">
     <div>
       <h3>Current Cue</h3>
-      <img id="currentCue" class="cue-preview" src="">
+      <div id="currentCuePreview" class="cue-preview"></div>
     </div>
     <div>
       <h3>Next Cue</h3>
-      <img id="nextCue" class="cue-preview" src="">
+      <div id="nextCuePreview" class="cue-preview"></div>
     </div>
   </div>
 
@@ -50,61 +41,92 @@
   </div>
 
   <script>
+    let showName = localStorage.getItem("currentShow") || "RigCheck";
+    let cueList = [""]; // cue 0 = blank
     let currentCue = 0;
-    let showName = localStorage.getItem('currentShow');
-    let cues = [];
     let blackout = false;
 
-    if (!showName) {
-      document.getElementById('showLoaderContainer').style.display = 'block';
-    } else {
-      document.getElementById('showTitle').textContent = `Loaded Show: ${showName}`;
-      loadCueList(showName);
-    }
+    document.getElementById("showTitle").innerText = `Loaded Show: ${showName}`;
+    openViewer();
+    loadCues();
 
-    function loadShow() {
-      showName = document.getElementById('showSelect').value;
-      localStorage.setItem('currentShow', showName);
-      localStorage.setItem('currentCue', '0');
-      document.getElementById('showLoaderContainer').style.display = 'none';
-      document.getElementById('showTitle').textContent = `Loaded Show: ${showName}`;
-      loadCueList(showName);
-    }
+    function loadCues() {
+      const basePath = `assets/${showName}/`;
+      const formats = ["png", "jpg", "jpeg", "mp4"];
+      let index = 1;
 
-    function loadCueList(show) {
-      fetch(`assets/${show}/`)
-        .then(() => {
-          const exts = ['jpg', 'jpeg', 'png', 'gif', 'mp4'];
-          let i = 0;
-          cues = [];
-          const preload = () => {
-            const testImg = new Image();
-            testImg.onload = () => {
-              cues.push(`assets/${show}/${i}.jpg`);
-              i++;
-              preload();
-            };
-            testImg.onerror = () => {
-              updateCues();
-            };
-            testImg.src = `assets/${show}/${i}.jpg`;
+      function tryLoadNext() {
+        if (index > 99) return updateCues();
+
+        let loaded = false;
+        formats.forEach(ext => {
+          let path = `${basePath}${index}.${ext}`;
+          let img = new Image();
+          img.onload = () => {
+            if (!loaded) {
+              cueList.push(path);
+              index++;
+              tryLoadNext();
+              loaded = true;
+            }
           };
-          preload();
-        })
-        .catch(() => alert('Could not load show.'));
+          img.onerror = () => {
+            // If it's mp4, push it directly as it won't load in Image
+            if (ext === "mp4" && !loaded) {
+              fetch(path)
+                .then(res => {
+                  if (res.ok) {
+                    cueList.push(path);
+                    index++;
+                    tryLoadNext();
+                  }
+                })
+                .catch(() => {});
+            }
+          };
+          img.src = path;
+        });
+      }
+
+      tryLoadNext();
     }
 
     function updateCues() {
-      document.getElementById('currentCue').src = cues[currentCue] || '';
-      document.getElementById('nextCue').src = cues[currentCue + 1] || '';
-      const viewer = window.open('', 'viewerWindow');
+      const current = cueList[currentCue] || "";
+      const next = cueList[currentCue + 1] || "";
+
+      renderCue(current, "currentCuePreview");
+      renderCue(next, "nextCuePreview");
+
+      // Send to viewer
+      const viewer = window.open("viewer.html", "viewerWindow");
       if (viewer) {
-        viewer.postMessage({ cue: cues[currentCue] }, '*');
+        viewer.postMessage({ cue: current, blackout }, "*");
+      }
+    }
+
+    function renderCue(cuePath, elementId) {
+      const el = document.getElementById(elementId);
+      el.innerHTML = "";
+      if (cuePath.endsWith(".mp4")) {
+        const video = document.createElement("video");
+        video.src = cuePath;
+        video.controls = false;
+        video.autoplay = true;
+        video.loop = true;
+        video.muted = true;
+        video.style.maxWidth = "100%";
+        el.appendChild(video);
+      } else if (cuePath) {
+        const img = document.createElement("img");
+        img.src = cuePath;
+        img.className = "cue-preview";
+        el.appendChild(img);
       }
     }
 
     function goCue() {
-      if (currentCue < cues.length - 1) {
+      if (currentCue < cueList.length - 1) {
         currentCue++;
         updateCues();
       }
@@ -119,20 +141,17 @@
 
     function toggleBlackout() {
       blackout = !blackout;
-      const viewer = window.open('', 'viewerWindow');
-      if (viewer) {
-        viewer.postMessage({ blackout: blackout }, '*');
-      }
-      document.getElementById('blackoutBtn').textContent = blackout ? 'Turn Off Blackout' : 'Blackout';
+      updateCues();
+      document.getElementById("blackoutBtn").innerText = blackout ? "Turn Off Blackout" : "Blackout";
     }
 
     function endShow() {
-      window.location.href = 'home.html';
+      window.location.href = "home.html";
     }
 
-    window.addEventListener('load', () => {
-      currentCue = parseInt(localStorage.getItem('currentCue') || '0');
-    });
+    function openViewer() {
+      window.open("viewer.html", "viewerWindow");
+    }
   </script>
 </body>
 </html>
