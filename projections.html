@@ -21,7 +21,7 @@
 </head>
 <body>
   <div class="main-container">
-    <h1>Projections Control</h1>
+    <h1 id="showTitle">Projections Control</h1>
     <div class="preview-container">
       <div class="preview-box">
         <h3>Current Cue</h3>
@@ -40,21 +40,26 @@
   </div>
 
   <script>
-    const cues = [
-      { type: 'blank', src: '' },
-      { type: 'image', src: 'assets/RigCheck/1.jpg' },
-      { type: 'video', src: 'assets/RigCheck/2.mp4' },
-      { type: 'image', src: 'assets/RigCheck/3.jpg' },
-      { type: 'video', src: 'assets/RigCheck/4.mp4' },
-    ];
+    const urlParams = new URLSearchParams(window.location.search);
+    const showName = urlParams.get('show') || 'RigCheck';
+    document.getElementById('showTitle').innerText = `Projections Control - ${showName}`;
+
+    const viewerWindow = window.open('viewer.html', 'viewerWindow');
+
+    const cues = [{ type: 'blank', src: '' }];
+    let index = 1;
+
+    while (index <= 50) {
+      const imagePath = `assets/${showName}/${index}.jpg`;
+      const videoPath = `assets/${showName}/${index}.mp4`;
+
+      cues.push({ type: 'image', src: imagePath });
+      cues.push({ type: 'video', src: videoPath });
+      index++;
+    }
 
     let currentCueIndex = 0;
     let blackout = false;
-
-    const currentPreview = document.getElementById('currentPreview');
-    const nextPreview = document.getElementById('nextPreview');
-
-    const viewerWindow = window.open('viewer.html', 'viewerWindow');
 
     function createMediaElement(cue) {
       if (cue.type === 'image') {
@@ -75,15 +80,14 @@
     }
 
     function updatePreviews() {
-      const currentCue = cues[currentCueIndex];
+      const currentCue = cues[currentCueIndex] || { type: 'blank', src: '' };
       const nextCue = cues[currentCueIndex + 1] || { type: 'blank', src: '' };
 
-      currentPreview.innerHTML = '';
-      nextPreview.innerHTML = '';
-      currentPreview.appendChild(createMediaElement(currentCue));
-      nextPreview.appendChild(createMediaElement(nextCue));
+      document.getElementById('currentPreview').innerHTML = '';
+      document.getElementById('nextPreview').innerHTML = '';
+      document.getElementById('currentPreview').appendChild(createMediaElement(currentCue));
+      document.getElementById('nextPreview').appendChild(createMediaElement(nextCue));
 
-      // Send cue to viewer
       if (viewerWindow) {
         viewerWindow.postMessage({ cue: currentCue }, '*');
       }
@@ -105,13 +109,10 @@
 
     document.getElementById('blackoutBtn').onclick = () => {
       blackout = !blackout;
-      if (viewerWindow) {
-        viewerWindow.postMessage({ blackout }, '*');
-      }
+      if (viewerWindow) viewerWindow.postMessage({ blackout }, '*');
     };
 
-    updatePreviews(); // Initial load
+    updatePreviews();
   </script>
 </body>
 </html>
-
