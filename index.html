@@ -8,8 +8,8 @@
 <body>
   <div class="login-container">
     <h1>Login to CueProjections</h1>
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
     <button onclick="login()">Login</button>
     <p id="errorMsg" style="color: red;"></p>
   </div>
@@ -24,15 +24,12 @@
 
       if (users.includes(user) && user === pass) {
         localStorage.setItem('username', user);
-        if (user === 'admin') {
-          window.location.href = 'admin.html';
-        } else {
-          window.location.href = 'home.html';
-        }
+        window.location.href = user === 'admin' ? 'admin.html' : 'home.html';
       } else {
-        errorMsg.textContent = 'Invalid credentials. Please try again.';
+        errorMsg.textContent = 'Invalid credentials.';
       }
     }
   </script>
 </body>
 </html>
+
