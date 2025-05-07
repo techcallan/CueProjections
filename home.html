@@ -7,21 +7,47 @@
 </head>
 <body>
   <div class="main-container">
-    <h1>Welcome to CueProjections</h1>
-    <p>Loading your assigned show...</p>
+    <h1>Welcome, <span id="usernameDisplay"></span></h1>
+    <h3>Your Assigned Shows:</h3>
+    <ul id="showList"></ul>
   </div>
 
   <script>
-    // Simulate user and assigned show
-    const user = 'customer1';
-    const assignedShow = 'RigCheck';
+    const assignedShows = {
+      'customer1': ['RigCheck', 'Trashion'],
+      'customer2': ['RigCheck'],
+      'customer3': ['RigCheck'],
+      'customer4': ['RigCheck'],
+      'customer5': ['RigCheck'],
+      'admin': [] // Admin shouldn’t see this page
+    };
 
-    // Store assigned show in localStorage
-    localStorage.setItem('assignedShow', assignedShow);
+    const username = localStorage.getItem('username');
+    if (!username || username === 'admin') {
+      window.location.href = 'index.html';
+    }
 
-    // Redirect to projections page
-    window.location.href = 'projections.html';
+    document.getElementById('usernameDisplay').innerText = username;
+
+    const showList = document.getElementById('showList');
+    const shows = assignedShows[username] || [];
+
+    if (shows.length === 0) {
+      showList.innerHTML = '<li>No shows assigned.</li>';
+    } else {
+      shows.forEach(show => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          ${show}
+          <button onclick="startShow('${show}')">Start Show</button>
+        `;
+        showList.appendChild(li);
+      });
+    }
+
+    function startShow(showName) {
+      window.location.href = `projections.html?show=${showName}`;
+    }
   </script>
 </body>
 </html>
-
