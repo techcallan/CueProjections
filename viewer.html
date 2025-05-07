@@ -1,33 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>CueProjections - Viewer</title>
+  <meta charset="UTF-8">
+  <title>Viewer</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .viewer-body {
+      background: black;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #cueDisplay {
+      max-height: 100vh;
+      max-width: 100vw;
+    }
+  </style>
+</head>
+<body class="viewer-body">
+  <div id="cueContainer"></div>
+
   <script>
-    window.addEventListener("message", (event) => {
-      const cueEl = document.getElementById("cueImage");
-      if (event.data.blackout !== undefined) {
-        cueEl.style.display = event.data.blackout ? "none" : "block";
+    const cueContainer = document.getElementById('cueContainer');
+
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+
+      // Handle blackout
+      if (data.blackout !== undefined) {
+        cueContainer.style.display = data.blackout ? 'none' : 'block';
+        return;
       }
-      if (event.data.cue) {
-        const ext = event.data.cue.split('.').pop();
-        if (ext === "mp4") {
-          cueEl.outerHTML = `<video id="cueImage" src="${event.data.cue}" autoplay loop muted></video>`;
-        } else {
-          cueEl.outerHTML = `<img id="cueImage" src="${event.data.cue}" alt="Cue Image">`;
+
+      // Handle cue
+      if (data.cue) {
+        cueContainer.innerHTML = ''; // Clear previous content
+        if (data.cue.type === 'image') {
+          const img = document.createElement('img');
+          img.id = 'cueDisplay';
+          img.src = data.cue.src;
+          cueContainer.appendChild(img);
+        } else if (data.cue.type === 'video') {
+          const video = document.createElement('video');
+          video.id = 'cueDisplay';
+          video.src = data.cue.src;
+          video.autoplay = true;
+          video.loop = true;
+          video.muted = true;
+          cueContainer.appendChild(video);
+        } else if (data.cue.type === 'blank') {
+          // Do nothing or display a blank screen
+          cueContainer.innerHTML = '';
         }
       }
     });
-
-    function goFullscreen() {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) elem.requestFullscreen();
-      document.getElementById("fsBtn").style.display = "none";
-    }
   </script>
-</head>
-<body class="viewer-body">
-  <button id="fsBtn" onclick="goFullscreen()">Fullscreen</button>
-  <img id="cueImage" src="" alt="Cue Image">
 </body>
 </html>
