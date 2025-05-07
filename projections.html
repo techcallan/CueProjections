@@ -10,42 +10,29 @@
       max-height: 200px;
       object-fit: contain;
     }
-    #viewerWindow {
-      display: none;
-    }
   </style>
 </head>
 <body>
   <div class="main-container">
     <h1>Projections Control</h1>
-    <div id="showLoader">
-      <label for="showSelect">Load Show:</label>
-      <select id="showSelect">
-        <option value="">-- Select a show --</option>
-      </select>
-      <button onclick="loadShow()">Load</button>
+    <h3 id="currentCueTitle">Cue 0 (Blank)</h3>
+
+    <div class="preview-container">
+      <div>
+        <h4>Current Cue Preview</h4>
+        <div id="currentPreview"></div>
+      </div>
+      <div>
+        <h4>Next Cue Preview</h4>
+        <div id="nextPreview"></div>
+      </div>
     </div>
 
-    <div id="controlPanel" style="display:none;">
-      <h3 id="currentCueTitle">Cue 0 (Blank)</h3>
-
-      <div class="preview-container">
-        <div>
-          <h4>Current Cue Preview</h4>
-          <div id="currentPreview"></div>
-        </div>
-        <div>
-          <h4>Next Cue Preview</h4>
-          <div id="nextPreview"></div>
-        </div>
-      </div>
-
-      <div class="button-group">
-        <button onclick="prevCue()">Back</button>
-        <button onclick="goCue()">GO</button>
-        <button onclick="toggleBlackout()">Blackout</button>
-        <button onclick="endShow()">End Show</button>
-      </div>
+    <div class="button-group">
+      <button onclick="prevCue()">Back</button>
+      <button onclick="goCue()">GO</button>
+      <button onclick="toggleBlackout()">Blackout</button>
+      <button onclick="endShow()">End Show</button>
     </div>
   </div>
 
@@ -56,59 +43,32 @@
     let isBlackout = false;
     let lastCueBeforeBlackout = 0;
 
-    const showSelect = document.getElementById("showSelect");
-
-    const shows = {
+    const show = localStorage.getItem("currentShow") || "RigCheck";
+    const showMap = {
       "RigCheck": ["1.png", "2.png", "3.png", "4.mp4"],
-      "Trashion": []
+      "Trashion": ["1.png", "2.png"]
     };
 
-    window.onload = () => {
-      Object.keys(shows).forEach(show => {
-        const option = document.createElement("option");
-        option.value = show;
-        option.textContent = show;
-        showSelect.appendChild(option);
-      });
-    };
-
-    function loadShow() {
-      const selectedShow = showSelect.value;
-      if (!selectedShow) return alert("Select a show");
-
-      cues = shows[selectedShow].map(file => `assets/${selectedShow}/${file}`);
-      cues.unshift(""); // cue 0 = blank
-      currentCueIndex = 0;
-      updatePreviews();
-
-      document.getElementById("controlPanel").style.display = "block";
-
-      viewerWindow = window.open("viewer.html", "viewerWindow");
-
-      setTimeout(() => {
-        sendCue(); // send blank cue initially
-      }, 500);
-    }
+    const showFiles = showMap[show] || [];
+    cues = showFiles.map(file => `assets/${show}/${file}`);
+    cues.unshift(""); // cue 0 = blank
 
     function updatePreviews() {
       const current = cues[currentCueIndex];
       const next = cues[currentCueIndex + 1];
-
-      updatePreviewElement("currentPreview", current);
-      updatePreviewElement("nextPreview", next);
+      updatePreview("currentPreview", current);
+      updatePreview("nextPreview", next);
       document.getElementById("currentCueTitle").textContent = `Cue ${currentCueIndex}`;
     }
 
-    function updatePreviewElement(containerId, cuePath) {
+    function updatePreview(containerId, path) {
       const container = document.getElementById(containerId);
       container.innerHTML = "";
+      if (!path) return;
 
-      if (!cuePath) return;
-
-      const isVideo = cuePath.endsWith(".mp4");
-
+      const isVideo = path.endsWith(".mp4");
       const el = isVideo ? document.createElement("video") : document.createElement("img");
-      el.src = cuePath;
+      el.src = path;
       if (isVideo) {
         el.autoplay = true;
         el.loop = true;
@@ -119,29 +79,27 @@
 
     function sendCue() {
       if (!viewerWindow || viewerWindow.closed) {
-        alert("Viewer window not open!");
+        alert("Viewer not open!");
         return;
       }
-
-      const current = cues[currentCueIndex];
-      viewerWindow.postMessage({ cue: current, blackout: isBlackout }, "*");
+      const cue = cues[currentCueIndex];
+      viewerWindow.postMessage({ cue, blackout: isBlackout }, "*");
     }
 
     function goCue() {
-      if (isBlackout) toggleBlackout(); // exit blackout on GO
-
+      if (isBlackout) toggleBlackout();
       if (currentCueIndex < cues.length - 1) {
         currentCueIndex++;
-        sendCue();
         updatePreviews();
+        sendCue();
       }
     }
 
     function prevCue() {
       if (currentCueIndex > 0) {
         currentCueIndex--;
-        sendCue();
         updatePreviews();
+        sendCue();
       }
     }
 
@@ -159,6 +117,11 @@
     function endShow() {
       window.location.href = "home.html";
     }
+
+    // Init
+    viewerWindow = window.open("viewer.html", "viewerWindow");
+    updatePreviews();
+    setTimeout(() => sendCue(), 500);
   </script>
 </body>
 </html>
