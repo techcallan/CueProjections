@@ -1,42 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>CueProjections – Admin</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <title>CueProjections - Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    const users = ["customer1", "customer2", "customer3", "customer4", "customer5"];
+    const shows = ["RigCheck", "Trashion"];
+
+    const assignments = {
+      customer1: ["RigCheck", "Trashion"],
+      customer2: ["RigCheck"],
+      customer3: ["RigCheck"],
+      customer4: ["RigCheck"],
+      customer5: ["RigCheck"]
+    };
+
+    function assignShow() {
+      const user = document.getElementById("user").value;
+      const show = document.getElementById("show").value;
+      if (!assignments[user].includes(show)) {
+        assignments[user].push(show);
+        alert(`Assigned ${show} to ${user}`);
+      }
+    }
+
+    function removeShow() {
+      const user = document.getElementById("user").value;
+      const show = document.getElementById("show").value;
+      assignments[user] = assignments[user].filter(s => s !== show);
+      alert(`Removed ${show} from ${user}`);
+    }
+  </script>
 </head>
 <body>
   <div class="main-container">
     <h1>Admin Panel</h1>
-    <div id="assignments"></div>
-    <button id="logout">Logout</button>
+    <label>User:</label>
+    <select id="user">
+      ${users.map(u => `<option value="${u}">${u}</option>`).join("")}
+    </select>
+
+    <label>Show:</label>
+    <select id="show">
+      ${shows.map(s => `<option value="${s}">${s}</option>`).join("")}
+    </select>
+
+    <button onclick="assignShow()">Assign Show</button>
+    <button onclick="removeShow()">Remove Show</button>
   </div>
-
-  <script>
-    const users = ["customer1", "customer2", "customer3", "customer4", "customer5"];
-    const shows = ["RigCheck", "Trashion"];
-    const assignmentsDiv = document.getElementById("assignments");
-
-    users.forEach(user => {
-      const userDiv = document.createElement("div");
-      userDiv.innerHTML = `<h3>${user}</h3>`;
-      const select = document.createElement("select");
-      select.multiple = true;
-      select.id = `select-${user}`;
-      shows.forEach(show => {
-        const option = document.createElement("option");
-        option.value = show;
-        option.text = show;
-        select.appendChild(option);
-      });
-      userDiv.appendChild(select);
-      assignmentsDiv.appendChild(userDiv);
-    });
-
-    document.getElementById("logout").onclick = () => {
-      localStorage.removeItem("user");
-      window.location.href = "index.html";
-    };
-  </script>
 </body>
+</html>
+
 </html>
