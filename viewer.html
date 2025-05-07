@@ -55,10 +55,8 @@
   <script>
     const cueDisplay = document.getElementById("cueDisplay");
 
-    // Listen for messages from projections.html
     window.addEventListener("message", (event) => {
       const data = event.data;
-
       cueDisplay.innerHTML = "";
 
       if (data.blackout) {
@@ -68,8 +66,7 @@
 
       if (data.cue) {
         cueDisplay.style.background = "black";
-
-        const isVideo = data.cue.endsWith(".mp4") || data.cue.endsWith(".webm");
+        const isVideo = data.cue.endsWith(".mp4");
 
         if (isVideo) {
           const video = document.createElement("video");
@@ -86,6 +83,9 @@
           const img = document.createElement("img");
           img.src = data.cue;
           img.alt = "Cue Image";
+          img.style.width = "100%";
+          img.style.height = "100%";
+          img.style.objectFit = "contain";
           cueDisplay.appendChild(img);
         }
       }
@@ -102,3 +102,4 @@
   </script>
 </body>
 </html>
+
