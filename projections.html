@@ -1,91 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>CueProjections - Control</title>
+  <meta charset="UTF-8">
+  <title>Projections</title>
   <link rel="stylesheet" href="css/style.css">
-  <script>
-    let cues = [];
-    let currentCue = 0;
-    let inBlackout = false;
-    let showName = localStorage.getItem("currentShow");
-
-    function loadCues() {
-      fetch(`assets/${showName}/`)
-        .then(() => {
-          cues = ["0", "1", "2", "3", "4"]; // Static cue names (image/video files)
-          updatePreviews();
-          displayCue();
-        });
-    }
-
-    function getCueFile(index) {
-      const cue = cues[index];
-      if (!cue) return "";
-      const base = `assets/${showName}/${cue}`;
-      return [`${base}.png`, `${base}.jpg`, `${base}.jpeg`, `${base}.mp4`]
-        .find(src => src.includes('.'));
-    }
-
-    function displayCue() {
-      const viewer = window.open("", "viewerWindow");
-      if (viewer) {
-        viewer.postMessage({ cue: getCueFile(currentCue) }, "*");
-      }
-
-      document.getElementById("currentCue").textContent = `Cue ${currentCue}`;
-      document.getElementById("currentTitle").textContent = getCueFile(currentCue);
-      updatePreviews();
-    }
-
-    function goNext() {
-      if (currentCue < cues.length - 1) currentCue++;
-      inBlackout = false;
-      displayCue();
-    }
-
-    function goBack() {
-      if (currentCue > 0) currentCue--;
-      inBlackout = false;
-      displayCue();
-    }
-
-    function toggleBlackout() {
-      inBlackout = !inBlackout;
-      const viewer = window.open("", "viewerWindow");
-      if (viewer) {
-        viewer.postMessage({ blackout: inBlackout }, "*");
-      }
-      document.getElementById("blackoutBtn").textContent = inBlackout ? "Turn Off Blackout" : "Blackout";
-    }
-
-    function updatePreviews() {
-      const prev = getCueFile(currentCue);
-      const next = getCueFile(currentCue + 1);
-
-      document.getElementById("previewCurrent").src = prev;
-      document.getElementById("previewNext").src = next;
-    }
-
-    window.onload = () => {
-      loadCues();
-    };
-  </script>
 </head>
 <body>
   <div class="main-container">
-    <h1>Control Panel - <span id="currentCue"></span></h1>
-    <p id="currentTitle"></p>
+    <h1>Projections Control</h1>
     <div class="preview-container">
-      <img id="previewCurrent" alt="Current Preview">
-      <img id="previewNext" alt="Next Preview">
+      <div>
+        <h3>Current Cue</h3>
+        <img id="currentPreview" src="" alt="Current Cue Preview">
+      </div>
+      <div>
+        <h3>Next Cue</h3>
+        <img id="nextPreview" src="" alt="Next Cue Preview">
+      </div>
     </div>
     <div class="button-group">
-      <button onclick="goBack()">Back</button>
-      <button onclick="goNext()">GO</button>
-      <button id="blackoutBtn" onclick="toggleBlackout()">Blackout</button>
-      <button onclick="location.href='home.html'">End Show</button>
+      <button id="backBtn">Back</button>
+      <button id="goBtn">Go</button>
+      <button id="blackoutBtn">Blackout</button>
     </div>
   </div>
+
+  <script>
+    const cues = [
+      { type: 'blank', src: '' },
+      { type: 'image', src: 'assets/show1/cue1.jpg' },
+      { type: 'video', src: 'assets/show1/cue2.mp4' },
+      // Add more cues as needed
+    ];
+    let currentCueIndex = 0;
+    let blackout = false;
+
+    const currentPreview = document.getElementById('currentPreview');
+    const nextPreview = document.getElementById('nextPreview');
+    const backBtn = document.getElementById('backBtn');
+    const goBtn = document.getElementById('goBtn');
+    const blackoutBtn = document.getElementById('blackoutBtn');
+
+    function updatePreviews() {
+      const currentCue = cues[currentCueIndex];
+      const nextCue = cues[currentCueIndex + 1] || { type: 'blank', src: '' };
+
+      currentPreview.src = currentCue.src;
+      nextPreview.src = nextCue.src;
+
+      // Send current cue to viewer
+      const viewerWindow = window.open('', 'viewerWindow');
+      if (viewerWindow) {
+        viewerWindow.postMessage({ cue: currentCue }, '*');
+      }
+    }
+
+    backBtn.addEventListener('click', () => {
+      if (currentCueIndex > 0) {
+        currentCueIndex--;
+        updatePreviews();
+      }
+    });
+
+    goBtn.addEventListener('click', () => {
+      if (currentCueIndex < cues.length - 1) {
+        currentCueIndex++;
+        updatePreviews();
+      }
+    });
+
+    blackoutBtn.addEventListener('click', () => {
+      blackout = !blackout;
+      const viewerWindow = window.open('', 'viewerWindow');
+      if (viewerWindow) {
+        viewerWindow.postMessage({ blackout }, '*');
+      }
+    });
+
+    // Initialize with cue 0
+    updatePreviews();
+  </script>
 </body>
 </html>
 
