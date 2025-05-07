@@ -1,28 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Viewer</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css" />
   <style>
-    body.viewer-body {
-      background: black;
+    html, body {
       margin: 0;
-      height: 100vh;
+      padding: 0;
+      background-color: black;
+      height: 100%;
+      width: 100%;
       overflow: hidden;
     }
 
-    #cueContainer {
+    #cueDisplay {
+      width: 100%;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100%;
-      width: 100%;
     }
 
-    #cueContainer img, #cueContainer video {
-      max-width: 100vw;
-      max-height: 100vh;
+    #cueDisplay img,
+    #cueDisplay video {
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
     }
 
@@ -30,54 +33,72 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      padding: 10px;
+      z-index: 100;
       background: gold;
       color: black;
-      font-weight: bold;
+      padding: 10px;
       border: none;
       border-radius: 5px;
+      font-weight: bold;
       cursor: pointer;
-      z-index: 999;
+    }
+
+    #fsBtn:hover {
+      background: #ffdf00;
     }
   </style>
 </head>
 <body class="viewer-body">
-  <button id="fsBtn" onclick="goFullscreen()">Fullscreen</button>
-  <div id="cueContainer"></div>
+  <div id="cueDisplay"></div>
+  <button id="fsBtn" onclick="toggleFullscreen()">Fullscreen</button>
 
   <script>
-    const cueContainer = document.getElementById('cueContainer');
+    const cueDisplay = document.getElementById("cueDisplay");
 
-    window.addEventListener('message', (event) => {
+    // Listen for messages from projections.html
+    window.addEventListener("message", (event) => {
       const data = event.data;
 
-      if (data.blackout !== undefined) {
-        cueContainer.style.display = data.blackout ? 'none' : 'flex';
+      cueDisplay.innerHTML = "";
+
+      if (data.blackout) {
+        cueDisplay.style.background = "black";
         return;
       }
 
       if (data.cue) {
-        cueContainer.innerHTML = '';
-        if (data.cue.type === 'image') {
-          const img = document.createElement('img');
-          img.src = data.cue.src;
-          cueContainer.appendChild(img);
-        } else if (data.cue.type === 'video') {
-          const video = document.createElement('video');
-          video.src = data.cue.src;
+        cueDisplay.style.background = "black";
+
+        const isVideo = data.cue.endsWith(".mp4") || data.cue.endsWith(".webm");
+
+        if (isVideo) {
+          const video = document.createElement("video");
+          video.src = data.cue;
           video.autoplay = true;
           video.loop = true;
-          video.muted = true;
-          cueContainer.appendChild(video);
+          video.muted = false;
+          video.controls = false;
+          video.style.width = "100%";
+          video.style.height = "100%";
+          video.style.objectFit = "contain";
+          cueDisplay.appendChild(video);
+        } else {
+          const img = document.createElement("img");
+          img.src = data.cue;
+          img.alt = "Cue Image";
+          cueDisplay.appendChild(img);
         }
       }
     });
 
-    function goFullscreen() {
-      document.documentElement.requestFullscreen();
-      document.getElementById('fsBtn').style.display = 'none';
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        document.getElementById("fsBtn").style.display = "none";
+      } else {
+        document.exitFullscreen();
+      }
     }
   </script>
 </body>
 </html>
-
