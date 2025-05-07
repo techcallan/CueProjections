@@ -8,44 +8,45 @@
 <body>
   <div class="main-container">
     <h1>Welcome to CueProjections</h1>
-    <h3 id="welcomeUser"></h3>
+    <h3 id="welcomeUser">Welcome!</h3>
     <ul id="showList"></ul>
   </div>
 
   <script>
     const username = localStorage.getItem('username');
-    if (!username) {
-      window.location.href = 'index.html';
-    }
-
-    const defaultShows = {
-      admin: [],
-      customer1: ['RigCheck'],
-      customer2: ['RigCheck'],
-      customer3: ['RigCheck'],
-      customer4: ['RigCheck'],
-      customer5: ['RigCheck']
-    };
-
-    // Add Trashion manually to a user if needed in admin
-    const assignedShows = JSON.parse(localStorage.getItem('assignedShows')) || defaultShows;
-
-    document.getElementById('welcomeUser').textContent = `Logged in as ${username}`;
-
-    const shows = assignedShows[username] || [];
+    const welcomeEl = document.getElementById('welcomeUser');
     const list = document.getElementById('showList');
 
-    if (shows.length === 0) {
-      list.innerHTML = `<li>No shows assigned.</li>`;
+    if (!username) {
+      welcomeEl.textContent = "No user logged in.";
+      list.innerHTML = "<li>Please login at <a href='index.html'>index.html</a>.</li>";
     } else {
-      shows.forEach(show => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-          <strong>${show}</strong>
-          <button onclick="startShow('${show}')">Start Show</button>
-        `;
-        list.appendChild(li);
-      });
+      welcomeEl.textContent = `Logged in as ${username}`;
+
+      const defaultShows = {
+        admin: [],
+        customer1: ['RigCheck'],
+        customer2: ['RigCheck'],
+        customer3: ['RigCheck'],
+        customer4: ['RigCheck'],
+        customer5: ['RigCheck']
+      };
+
+      const assignedShows = JSON.parse(localStorage.getItem('assignedShows')) || defaultShows;
+      const shows = assignedShows[username] || [];
+
+      if (shows.length === 0) {
+        list.innerHTML = "<li>No shows assigned.</li>";
+      } else {
+        shows.forEach(show => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <strong>${show}</strong>
+            <button onclick="startShow('${show}')">Start Show</button>
+          `;
+          list.appendChild(li);
+        });
+      }
     }
 
     function startShow(show) {
