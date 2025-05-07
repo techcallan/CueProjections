@@ -1,181 +1,91 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Projections Control</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <style>
-    .preview-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-
-    .preview-box {
-      flex: 1;
-      text-align: center;
-      background: #333;
-      padding: 10px;
-      border-radius: 5px;
-    }
-
-    .preview-box img {
-      max-height: 200px;
-      max-width: 100%;
-      object-fit: contain;
-    }
-
-    .button-group {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-
-    #cueInfo {
-      text-align: center;
-      font-size: 1.2em;
-      margin-bottom: 15px;
-      color: white;
-    }
-
-    #showSelectModal {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.9);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    #showSelectModal select, #showSelectModal button {
-      width: 300px;
-    }
-  </style>
-</head>
-<body>
-  <div class="main-container">
-    <h1>Projections Control</h1>
-    <div id="cueInfo">Loading show...</div>
-
-    <div class="preview-container">
-      <div class="preview-box">
-        <h3>Current Cue</h3>
-        <img id="currentPreview" src="" alt="Current Cue">
-      </div>
-      <div class="preview-box">
-        <h3>Next Cue</h3>
-        <img id="nextPreview" src="" alt="Next Cue">
-      </div>
-    </div>
-
-    <div class="button-group">
-      <button onclick="goBack()">⬅️ BACK</button>
-      <button onclick="goCue()">▶️ GO</button>
-      <button onclick="toggleBlackout()" id="blackoutBtn">⚫ BLACKOUT</button>
-      <button onclick="endShow()">⛔ END SHOW</button>
-    </div>
-  </div>
-
-  <div id="showSelectModal">
-    <div class="login-container">
-      <h2>Select a Show</h2>
-      <select id="showSelect"></select>
-      <button onclick="loadShow()">Load Show</button>
-    </div>
-  </div>
-
+  <title>CueProjections - Control</title>
+  <link rel="stylesheet" href="css/style.css">
   <script>
+    let cues = [];
     let currentCue = 0;
-    let showImages = [];
-    let showName = '';
-    let isBlackout = false;
+    let inBlackout = false;
+    let showName = localStorage.getItem("currentShow");
 
-    const showSelectModal = document.getElementById('showSelectModal');
-    const showSelect = document.getElementById('showSelect');
-    const currentPreview = document.getElementById('currentPreview');
-    const nextPreview = document.getElementById('nextPreview');
-    const cueInfo = document.getElementById('cueInfo');
-
-    const userShows = JSON.parse(localStorage.getItem("assignedShows")) || [];
-
-    // Load show options
-    window.onload = () => {
-      userShows.forEach(show => {
-        const opt = document.createElement("option");
-        opt.value = show;
-        opt.textContent = show;
-        showSelect.appendChild(opt);
-      });
-    };
-
-    function loadShow() {
-      showName = showSelect.value;
-      fetchShowAssets(showName);
-      showSelectModal.style.display = 'none';
+    function loadCues() {
+      fetch(`assets/${showName}/`)
+        .then(() => {
+          cues = ["0", "1", "2", "3", "4"]; // Static cue names (image/video files)
+          updatePreviews();
+          displayCue();
+        });
     }
 
-    function fetchShowAssets(showFolder) {
-      // Dummy file list simulation (replace with dynamic fetching if needed)
-      const assets = {
-        RigCheck: ["1.png", "2.png", "3.png", "4.mp4"],
-        Trashion: ["1.png", "2.png", "3.png"]
-      };
+    function getCueFile(index) {
+      const cue = cues[index];
+      if (!cue) return "";
+      const base = `assets/${showName}/${cue}`;
+      return [`${base}.png`, `${base}.jpg`, `${base}.jpeg`, `${base}.mp4`]
+        .find(src => src.includes('.'));
+    }
 
-      showImages = (assets[showFolder] || []).map(file => `assets/${showFolder}/${file}`);
+    function displayCue() {
+      const viewer = window.open("", "viewerWindow");
+      if (viewer) {
+        viewer.postMessage({ cue: getCueFile(currentCue) }, "*");
+      }
+
+      document.getElementById("currentCue").textContent = `Cue ${currentCue}`;
+      document.getElementById("currentTitle").textContent = getCueFile(currentCue);
       updatePreviews();
-      sendToViewer();
     }
 
-    function updatePreviews() {
-      if (!showImages.length) return;
-
-      const currentSrc = showImages[currentCue] || '';
-      const nextSrc = showImages[currentCue + 1] || '';
-
-      currentPreview.src = currentSrc;
-      nextPreview.src = nextSrc;
-      cueInfo.textContent = `Cue ${currentCue} — ${extractTitle(currentSrc)}`;
-    }
-
-    function extractTitle(path) {
-      return path.split('/').pop();
-    }
-
-    function goCue() {
-      if (isBlackout) toggleBlackout();
-      if (currentCue < showImages.length - 1) currentCue++;
-      updatePreviews();
-      sendToViewer();
+    function goNext() {
+      if (currentCue < cues.length - 1) currentCue++;
+      inBlackout = false;
+      displayCue();
     }
 
     function goBack() {
-      if (isBlackout) toggleBlackout();
       if (currentCue > 0) currentCue--;
-      updatePreviews();
-      sendToViewer();
+      inBlackout = false;
+      displayCue();
     }
 
     function toggleBlackout() {
-      isBlackout = !isBlackout;
-      const cue = isBlackout ? 'blackout' : showImages[currentCue];
-      document.getElementById('blackoutBtn').textContent = isBlackout ? '🔆 TURN OFF BLACKOUT' : '⚫ BLACKOUT';
-      localStorage.setItem("cue", cue);
+      inBlackout = !inBlackout;
+      const viewer = window.open("", "viewerWindow");
+      if (viewer) {
+        viewer.postMessage({ blackout: inBlackout }, "*");
+      }
+      document.getElementById("blackoutBtn").textContent = inBlackout ? "Turn Off Blackout" : "Blackout";
     }
 
-    function sendToViewer() {
-      localStorage.setItem("cue", showImages[currentCue]);
+    function updatePreviews() {
+      const prev = getCueFile(currentCue);
+      const next = getCueFile(currentCue + 1);
+
+      document.getElementById("previewCurrent").src = prev;
+      document.getElementById("previewNext").src = next;
     }
 
-    function endShow() {
-      window.location.href = "home.html";
-    }
+    window.onload = () => {
+      loadCues();
+    };
   </script>
+</head>
+<body>
+  <div class="main-container">
+    <h1>Control Panel - <span id="currentCue"></span></h1>
+    <p id="currentTitle"></p>
+    <div class="preview-container">
+      <img id="previewCurrent" alt="Current Preview">
+      <img id="previewNext" alt="Next Preview">
+    </div>
+    <div class="button-group">
+      <button onclick="goBack()">Back</button>
+      <button onclick="goNext()">GO</button>
+      <button id="blackoutBtn" onclick="toggleBlackout()">Blackout</button>
+      <button onclick="location.href='home.html'">End Show</button>
+    </div>
+  </div>
 </body>
 </html>
 
