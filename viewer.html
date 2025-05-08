@@ -17,24 +17,43 @@
     #cueDisplay {
       width: 100%;
       height: 100%;
+      background: black;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: black;
+      position: relative;
     }
 
-    #cueDisplay img,
-    #cueDisplay video {
+    #cueTitle {
+      position: absolute;
+      bottom: 20px;
+      color: white;
+      font-size: 24px;
+      font-family: sans-serif;
+      background: rgba(0,0,0,0.6);
+      padding: 10px 20px;
+      border-radius: 8px;
+    }
+
+    #cueDisplay img, #cueDisplay video {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
+      position: absolute;
+      transition: opacity 1s ease-in-out;
+      opacity: 0;
+    }
+
+    #cueDisplay .active {
+      opacity: 1;
+      z-index: 1;
     }
 
     #fsBtn {
       position: absolute;
       top: 10px;
       right: 10px;
-      z-index: 100;
+      z-index: 999;
       background: #2196f3;
       color: white;
       padding: 10px;
@@ -49,48 +68,59 @@
     }
   </style>
 </head>
-<body class="viewer-body">
-  <div id="cueDisplay"></div>
+<body>
+  <div id="cueDisplay">
+    <div id="cueTitle"></div>
+  </div>
   <button id="fsBtn" onclick="toggleFullscreen()">Fullscreen</button>
 
   <script>
     const cueDisplay = document.getElementById("cueDisplay");
+    const cueTitle = document.getElementById("cueTitle");
+
+    function fadeInCue(el, fadeTime = 1) {
+      el.style.transition = `opacity ${fadeTime}s ease-in-out`;
+      el.classList.add("active");
+    }
+
+    function clearDisplay() {
+      Array.from(cueDisplay.children).forEach(child => {
+        if (child !== cueTitle) {
+          cueDisplay.removeChild(child);
+        }
+      });
+    }
 
     window.addEventListener("message", (event) => {
       const data = event.data;
-      cueDisplay.innerHTML = "";
+      clearDisplay();
 
       if (data.blackout) {
         cueDisplay.style.background = "black";
+        cueTitle.textContent = "BLACKOUT";
         return;
       }
 
+      cueDisplay.style.background = "black";
+      cueTitle.textContent = data.name || "";
+
       if (data.cue) {
         const isVideo = data.cue.endsWith(".mp4");
+        const el = isVideo ? document.createElement("video") : document.createElement("img");
+        el.src = data.cue;
 
         if (isVideo) {
-          const video = document.createElement("video");
-          video.src = data.cue;
-          video.autoplay = true;
-          video.loop = true;
-          video.muted = false;
-          video.controls = false;
-          video.playsInline = true;
-          video.preload = "auto";
-          video.style.width = "100%";
-          video.style.height = "100%";
-          video.style.objectFit = "contain";
-          video.addEventListener("canplay", () => video.play());
-          cueDisplay.appendChild(video);
-        } else {
-          const img = document.createElement("img");
-          img.src = data.cue;
-          img.alt = "Cue Image";
-          img.style.width = "100%";
-          img.style.height = "100%";
-          img.style.objectFit = "contain";
-          cueDisplay.appendChild(img);
+          el.autoplay = true;
+          el.loop = true;
+          el.muted = false;
+          el.playsInline = true;
+          el.preload = "auto";
+          el.addEventListener("canplay", () => el.play());
         }
+
+        cueDisplay.appendChild(el);
+        // Trigger fade
+        setTimeout(() => fadeInCue(el, data.fade || 1), 50);
       }
     });
 
