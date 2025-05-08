@@ -46,20 +46,12 @@
     const show = localStorage.getItem("currentShow") || "RigCheck";
     const showMap = {
       "RigCheck": ["1.png", "2.png", "3.png", "4.mp4"],
-      "Trashion": ["1.png", "2.png"]
+      "Trashion": ["1.png", "2.png", "3.mp4"]
     };
 
     const showFiles = showMap[show] || [];
     cues = showFiles.map(file => `assets/${show}/${file}`);
-    cues.unshift(""); // cue 0 = blank
-
-    function updatePreviews() {
-      const current = cues[currentCueIndex];
-      const next = cues[currentCueIndex + 1];
-      updatePreview("currentPreview", current);
-      updatePreview("nextPreview", next);
-      document.getElementById("currentCueTitle").textContent = `Cue ${currentCueIndex}`;
-    }
+    cues.unshift(""); // Cue 0 = blank
 
     function updatePreview(containerId, path) {
       const container = document.getElementById(containerId);
@@ -73,8 +65,18 @@
         el.autoplay = true;
         el.loop = true;
         el.muted = true;
+        el.playsInline = true;
+        el.preload = "auto";
       }
       container.appendChild(el);
+    }
+
+    function updatePreviews() {
+      const current = cues[currentCueIndex];
+      const next = cues[currentCueIndex + 1];
+      updatePreview("currentPreview", current);
+      updatePreview("nextPreview", next);
+      document.getElementById("currentCueTitle").textContent = `Cue ${currentCueIndex}`;
     }
 
     function sendCue() {
@@ -118,10 +120,10 @@
       window.location.href = "home.html";
     }
 
-    // Init
     viewerWindow = window.open("viewer.html", "viewerWindow");
     updatePreviews();
     setTimeout(() => sendCue(), 500);
   </script>
 </body>
 </html>
+
