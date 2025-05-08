@@ -20,6 +20,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      background: black;
     }
 
     #cueDisplay img,
@@ -34,8 +35,8 @@
       top: 10px;
       right: 10px;
       z-index: 100;
-      background: gold;
-      color: black;
+      background: #2196f3;
+      color: white;
       padding: 10px;
       border: none;
       border-radius: 5px;
@@ -44,7 +45,7 @@
     }
 
     #fsBtn:hover {
-      background: #ffdf00;
+      background: #1e88e5;
     }
   </style>
 </head>
@@ -65,7 +66,6 @@
       }
 
       if (data.cue) {
-        cueDisplay.style.background = "black";
         const isVideo = data.cue.endsWith(".mp4");
 
         if (isVideo) {
@@ -75,9 +75,12 @@
           video.loop = true;
           video.muted = false;
           video.controls = false;
+          video.playsInline = true;
+          video.preload = "auto";
           video.style.width = "100%";
           video.style.height = "100%";
           video.style.objectFit = "contain";
+          video.addEventListener("canplay", () => video.play());
           cueDisplay.appendChild(video);
         } else {
           const img = document.createElement("img");
@@ -102,4 +105,3 @@
   </script>
 </body>
 </html>
-
