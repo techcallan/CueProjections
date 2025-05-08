@@ -24,17 +24,6 @@
       position: relative;
     }
 
-    #cueTitle {
-      position: absolute;
-      bottom: 20px;
-      color: white;
-      font-size: 24px;
-      font-family: sans-serif;
-      background: rgba(0,0,0,0.6);
-      padding: 10px 20px;
-      border-radius: 8px;
-    }
-
     #cueDisplay img, #cueDisplay video {
       max-width: 100%;
       max-height: 100%;
@@ -69,14 +58,11 @@
   </style>
 </head>
 <body>
-  <div id="cueDisplay">
-    <div id="cueTitle"></div>
-  </div>
+  <div id="cueDisplay"></div>
   <button id="fsBtn" onclick="toggleFullscreen()">Fullscreen</button>
 
   <script>
     const cueDisplay = document.getElementById("cueDisplay");
-    const cueTitle = document.getElementById("cueTitle");
 
     function fadeInCue(el, fadeTime = 1) {
       el.style.transition = `opacity ${fadeTime}s ease-in-out`;
@@ -85,9 +71,7 @@
 
     function clearDisplay() {
       Array.from(cueDisplay.children).forEach(child => {
-        if (child !== cueTitle) {
-          cueDisplay.removeChild(child);
-        }
+        cueDisplay.removeChild(child);
       });
     }
 
@@ -97,12 +81,10 @@
 
       if (data.blackout) {
         cueDisplay.style.background = "black";
-        cueTitle.textContent = "BLACKOUT";
         return;
       }
 
       cueDisplay.style.background = "black";
-      cueTitle.textContent = data.name || "";
 
       if (data.cue) {
         const isVideo = data.cue.endsWith(".mp4");
@@ -119,7 +101,6 @@
         }
 
         cueDisplay.appendChild(el);
-        // Trigger fade
         setTimeout(() => fadeInCue(el, data.fade || 1), 50);
       }
     });
