@@ -17,25 +17,62 @@
     #cueDisplay {
       width: 100%;
       height: 100%;
-      background: black;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       position: relative;
+      background-color: black;
+      overflow: hidden;
     }
 
-    #cueDisplay img, #cueDisplay video {
+    .cueLayer {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      z-index: 0;
+      transition: none;
+    }
+
+    .cueLayer img, .cueLayer video {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      position: absolute;
-      transition: opacity 1s ease-in-out;
-      opacity: 0;
     }
 
-    #cueDisplay .active {
+    .cueLayer.active {
       opacity: 1;
       z-index: 1;
+    }
+
+    .slide-in {
+      animation: slideIn 2s forwards;
+    }
+
+    .slide-out {
+      animation: slideOut 2s forwards;
+    }
+
+    .dissolve {
+      animation: dissolve 2s forwards;
+    }
+
+    @keyframes slideIn {
+      0% { transform: translateX(100%); opacity: 0; }
+      100% { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOut {
+      0% { transform: translateX(0); opacity: 1; }
+      100% { transform: translateX(-100%); opacity: 0; }
+    }
+
+    @keyframes dissolve {
+      0% { opacity: 0; }
+      50% { opacity: 1; }
+      100% { opacity: 0; }
     }
 
     #fsBtn {
@@ -64,44 +101,97 @@
   <script>
     const cueDisplay = document.getElementById("cueDisplay");
 
-    function fadeInCue(el, fadeTime = 1) {
-      el.style.transition = `opacity ${fadeTime}s ease-in-out`;
-      el.classList.add("active");
+    let currentLayer = null;
+
+    function createCueElement(src, isVideo) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "cueLayer";
+
+      const el = isVideo ? document.createElement("video") : document.createElement("img");
+      el.src = src;
+
+      if (isVideo) {
+        el.autoplay = true;
+        el.loop = true;
+        el.muted = false;
+        el.playsInline = true;
+        el.preload = "auto";
+        el.addEventListener("canplay", () => el.play());
+      }
+
+      wrapper.appendChild(el);
+      return wrapper;
     }
 
-    function clearDisplay() {
-      Array.from(cueDisplay.children).forEach(child => {
-        cueDisplay.removeChild(child);
-      });
+    function transitionToCue(src, fadeTime = 1, transition = "fade2") {
+      const isVideo = src.endsWith(".mp4");
+      const nextLayer = createCueElement(src, isVideo);
+      cueDisplay.appendChild(nextLayer);
+
+      if (transition === "cut") {
+        if (currentLayer) cueDisplay.removeChild(currentLayer);
+        nextLayer.classList.add("active");
+        currentLayer = nextLayer;
+        return;
+      }
+
+      if (transition === "slide") {
+        if (currentLayer) {
+          currentLayer.classList.add("slide-out");
+          setTimeout(() => {
+            if (currentLayer) cueDisplay.removeChild(currentLayer);
+          }, 2000);
+        }
+        nextLayer.classList.add("slide-in");
+        nextLayer.style.opacity = 1;
+        currentLayer = nextLayer;
+        return;
+      }
+
+      if (transition === "dissolve") {
+        nextLayer.style.animation = "dissolve 2s forwards";
+        setTimeout(() => cueDisplay.removeChild(nextLayer), 2000);
+        return;
+      }
+
+      // Handle fade2 or fade5
+      let fadeDuration = transition === "fade5" ? 5 : 2;
+
+      nextLayer.style.transition = `opacity ${fadeDuration}s ease-in-out`;
+      nextLayer.classList.add("active");
+
+      if (currentLayer) {
+        currentLayer.style.transition = `opacity ${fadeDuration}s ease-in-out`;
+        currentLayer.classList.remove("active");
+        setTimeout(() => {
+          if (currentLayer) cueDisplay.removeChild(currentLayer);
+          currentLayer = nextLayer;
+        }, fadeDuration * 1000);
+      } else {
+        currentLayer = nextLayer;
+      }
+    }
+
+    function fadeToBlack(duration = 2) {
+      const blackLayer = document.createElement("div");
+      blackLayer.className = "cueLayer";
+      blackLayer.style.background = "black";
+      blackLayer.style.transition = `opacity ${duration}s ease-in-out`;
+      cueDisplay.appendChild(blackLayer);
+      setTimeout(() => {
+        blackLayer.classList.add("active");
+        if (currentLayer) cueDisplay.removeChild(currentLayer);
+        currentLayer = blackLayer;
+      }, 50);
     }
 
     window.addEventListener("message", (event) => {
       const data = event.data;
-      clearDisplay();
 
       if (data.blackout) {
-        cueDisplay.style.background = "black";
-        return;
-      }
-
-      cueDisplay.style.background = "black";
-
-      if (data.cue) {
-        const isVideo = data.cue.endsWith(".mp4");
-        const el = isVideo ? document.createElement("video") : document.createElement("img");
-        el.src = data.cue;
-
-        if (isVideo) {
-          el.autoplay = true;
-          el.loop = true;
-          el.muted = false;
-          el.playsInline = true;
-          el.preload = "auto";
-          el.addEventListener("canplay", () => el.play());
-        }
-
-        cueDisplay.appendChild(el);
-        setTimeout(() => fadeInCue(el, data.fade || 1), 50);
+        fadeToBlack(data.fade || 2);
+      } else if (data.cue) {
+        transitionToCue(data.cue, data.fade || 1, data.transition || "fade2");
       }
     });
 
