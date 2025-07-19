@@ -10,35 +10,26 @@
       max-height: 200px;
       object-fit: contain;
     }
-    .transitions-list {
-      margin-top: 2em;
-      max-width: 600px;
-      background: #222;
-      color: #eee;
-      padding: 1em;
-      border-radius: 8px;
-      font-family: monospace;
+    .button-group button {
+      margin-right: 10px;
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
     }
-    .transitions-list h3 {
-      margin-top: 0;
-      border-bottom: 1px solid #555;
-      padding-bottom: 0.5em;
+    #blackoutBtn {
+      background-color: red;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.5s ease;
     }
-    .transitions-list ul {
-      list-style: none;
-      padding-left: 0;
+    #blackoutBtn.yellow {
+      background-color: yellow;
+      color: black;
     }
-    .transitions-list li {
-      margin-bottom: 0.8em;
-    }
-    .transition-name {
-      font-weight: bold;
-      color: #00d9ff;
-    }
-    .transition-desc {
-      color: #bbb;
-      font-style: italic;
-      margin-left: 0.5em;
+    #blackoutBtn.green {
+      background-color: green;
+      color: white;
     }
   </style>
 </head>
@@ -59,35 +50,26 @@
     </div>
 
     <div class="button-group">
-      <button onclick="prevCue()">Back</button>
-      <button onclick="goCue()">GO</button>
-      <button onclick="toggleBlackout()">Blackout</button>
-      <button onclick="endShow()">End Show</button>
+      <button onclick="prevCue()" id="prevBtn">Back</button>
+      <button onclick="goCue()" id="goBtn">GO</button>
+      <button id="blackoutBtn" onclick="toggleBlackout()">Blackout</button>
+      <button onclick="endShow()" id="endBtn">End Show</button>
     </div>
 
-    <div class="transitions-list">
-      <h3>Available Transitions</h3>
-      <ul>
-        <li><span class="transition-name">cut</span> — Instant cut with no animation.</li>
-        <li><span class="transition-name">fade2</span> — Fade in over 2 seconds.</li>
-        <li><span class="transition-name">fade5</span> — Fade in over 5 seconds.</li>
-        <li><span class="transition-name">slide</span> — Slide in from the right.</li>
-        <li><span class="transition-name">slideLeft</span> — Slide in from the left.</li>
-        <li><span class="transition-name">slideRight</span> — Slide in from the right.</li>
-        <li><span class="transition-name">slideUp</span> — Slide in from the bottom.</li>
-        <li><span class="transition-name">slideDown</span> — Slide in from the top.</li>
-        <li><span class="transition-name">dissolve</span> — Crossfade between old and new cues.</li>
-        <li><span class="transition-name">zoomIn</span> — Zoom in from smaller scale while fading.</li>
-        <li><span class="transition-name">zoomOut</span> — Zoom out while fading away.</li>
-        <li><span class="transition-name">flip</span> — Flip in like a card flipping.</li>
-        <li><span class="transition-name">blur</span> — Blur in while fading up.</li>
-        <li><span class="transition-name">rotate</span> — Rotate in while fading up.</li>
-        <li><span class="transition-name">pixelate</span> — Pixelate out old cue, fade in new.</li>
-        <li><span class="transition-name">wipe</span> — Wipe reveal from left to right.</li>
-        { title: "Video Cue", file: "video.mp4", transition: "fade2", autoplay: true, loop: true }
-        { title: "Picture Cue", file: "5.png", transition: "dissolve" },
-      </ul>
-    </div>
+    <h4>Projection Types:</h4>
+    <ul>
+      <li><b>Cut:</b> Instant switch with no effect.</li>
+      <li><b>Fade2:</b> Fade over 2 seconds.</li>
+      <li><b>Fade5:</b> Slow fade over 5 seconds.</li>
+      <li><b>SlideRight/Left/Up/Down:</b> Slide cue in from direction.</li>
+      <li><b>ZoomIn/ZoomOut:</b> Zoom effect during transition.</li>
+      <li><b>Flip:</b> Horizontal flip transition.</li>
+      <li><b>Blur:</b> Blur to clear effect.</li>
+      <li><b>Rotate:</b> Rotate into view.</li>
+      <li><b>Pixelate:</b> Pixelation clearing.</li>
+      <li><b>Wipe:</b> Wipe reveal effect.</li>
+      <li><b>Dissolve:</b> Crossfade between current and next cues.</li>
+    </ul>
   </div>
 
   <script>
@@ -95,35 +77,30 @@
     let currentCueIndex = 0;
     let isBlackout = false;
     let lastCueBeforeBlackout = 0;
+    let blackoutInProgress = false;
 
     const shows = {
       "RigCheck": [
         { title: "Blank", file: "", transition: "cut" },
-        { title: "Slide Cue", file: "1.png", transition: "slide" },
+        { title: "Slide Cue", file: "1.png", transition: "slideRight" },
         { title: "Fade In", file: "2.png", transition: "fade2" },
         { title: "Fade Slow", file: "3.png", transition: "fade5" },
-        { title: "Slide Left Cue", file: "5.png", transition: "slideLeft" },
-        { title: "Slide Right Cue", file: "1.png", transition: "slideRight" },
-        { title: "Slide Up Cue", file: "2.png", transition: "slideUp" },
-        { title: "Slide Down Cue", file: "3.png", transition: "slideDown" },
-        { title: "Disolve Cue", file: "5.png", transition: "disolve" },
-        { title: "Zoom In Cue", file: "1.png", transition: "zoomIn" },
-        { title: "Zoom Out Cue", file: "2.png", transition: "zoomOut" },
-        { title: "FLip Cue", file: "3.png", transition: "flip" },
-        { title: "Blur Cue", file: "5.png", transition: "blur" },
-        { title: "Rotate Cue", file: "1.png", transition: "rotate" },
-        { title: "Pixilate Cue", file: "2.png", transition: "pixilate" },
-        { title: "Wipe Cue", file: "3.png", transition: "wipe" },
-        { title: "Video Cue", file: "4.mp4", transition: "fade2", autoplay: true, loop: false }
+        { title: "Dissolve Cue", file: "4.png", transition: "dissolve" },
+        { title: "Video Cue", file: "video.mp4", transition: "fade2", autoplay: true, loop: true }
       ],
       "Trashion": [
         { title: "Start", file: "start.png", transition: "fade2" },
-        { title: "Walk Video", file: "walk.mp4", transition: "slideRight", autoplay: true, loop: true }
+        { title: "Walk Video", file: "walk.mp4", transition: "slideLeft", autoplay: true, loop: true }
       ]
     };
 
     const show = localStorage.getItem("currentShow") || "RigCheck";
     const cues = shows[show] || [{ title: "Blank", file: "", transition: "cut" }];
+
+    const blackoutBtn = document.getElementById("blackoutBtn");
+    const goBtn = document.getElementById("goBtn");
+    const prevBtn = document.getElementById("prevBtn");
+    const endBtn = document.getElementById("endBtn");
 
     function getCuePath(cue) {
       return cue.file ? `assets/${show}/${cue.file}` : "";
@@ -136,77 +113,159 @@
 
       const path = getCuePath(cue);
       const isVideo = cue.file.endsWith(".mp4");
-      const el = isVideo ? document.createElement("video") : document.createElement("img");
-      el.src = path;
 
+      let el;
       if (isVideo) {
-        el.autoplay = cue.autoplay ?? true;
-        el.loop = cue.loop ?? true;
+        el = document.createElement("video");
+        el.src = path;
+        el.autoplay = false;
+        el.loop = false;
         el.muted = true;
-        el.playsInline = true;
-        el.preload = "auto";
-        el.addEventListener("canplay", () => el.play());
+        el.controls = true;
+        el.style.maxHeight = "200px";
+        el.style.maxWidth = "100%";
+      } else {
+        el = document.createElement("img");
+        el.src = path;
+        el.style.maxHeight = "200px";
+        el.style.maxWidth = "100%";
       }
-
       container.appendChild(el);
     }
 
-    function updatePreviews() {
-      updatePreview("currentPreview", cues[currentCueIndex]);
-      updatePreview("nextPreview", cues[currentCueIndex + 1]);
-      document.getElementById("currentCueTitle").textContent = `Cue ${currentCueIndex}: ${cues[currentCueIndex].title}`;
+    function updateCurrentCueTitle() {
+      document.getElementById("currentCueTitle").innerText = `Cue ${currentCueIndex}: ${cues[currentCueIndex]?.title || "Blank"}`;
     }
 
-    function sendCue(index = currentCueIndex, overrideBlackout = null) {
-      if (!viewerWindow || viewerWindow.closed) return;
-      const cue = cues[index];
-      const transition = cue.transition || "cut";
+    function sendCue(index) {
+      if (!viewerWindow) {
+        alert("Viewer window is not open.");
+        return;
+      }
+      if (index < 0 || index >= cues.length) return;
 
-      viewerWindow.postMessage({
+      const cue = cues[index];
+      const data = {
         cue: getCuePath(cue),
-        title: cue.title,
-        blackout: overrideBlackout ?? isBlackout,
-        transition: transition,
-        autoplay: cue.autoplay ?? true,
-        loop: cue.loop ?? true
-      }, "*");
+        transition: cue.transition,
+        autoplay: cue.autoplay,
+        loop: cue.loop,
+        blackout: false
+      };
+      viewerWindow.postMessage(data, "*");
     }
 
     function goCue() {
-      if (isBlackout) toggleBlackout();
-      if (currentCueIndex < cues.length - 1) {
-        currentCueIndex++;
-        updatePreviews();
-        sendCue();
-      }
+      if (blackoutInProgress) return;
+      if (isBlackout) return;
+
+      sendCue(currentCueIndex);
+      updateCurrentCueTitle();
+      updatePreview("currentPreview", cues[currentCueIndex]);
+      updatePreview("nextPreview", cues[currentCueIndex + 1]);
     }
 
     function prevCue() {
+      if (blackoutInProgress) return;
+      if (isBlackout) return;
+
       if (currentCueIndex > 0) {
         currentCueIndex--;
-        updatePreviews();
-        sendCue();
+        updateCurrentCueTitle();
+        updatePreview("currentPreview", cues[currentCueIndex]);
+        updatePreview("nextPreview", cues[currentCueIndex + 1]);
       }
     }
 
-    function toggleBlackout() {
-      if (!isBlackout) {
-        lastCueBeforeBlackout = currentCueIndex;
-        isBlackout = true;
-        viewerWindow.postMessage({ blackout: true, transition: "fade2" }, "*");
+    function nextCue() {
+      if (blackoutInProgress) return;
+      if (isBlackout) return;
+
+      if (currentCueIndex < cues.length - 1) {
+        currentCueIndex++;
+        updateCurrentCueTitle();
+        updatePreview("currentPreview", cues[currentCueIndex]);
+        updatePreview("nextPreview", cues[currentCueIndex + 1]);
+      }
+    }
+
+    function blackoutTransition(on) {
+      blackoutInProgress = true;
+      disableControls(true);
+
+      blackoutBtn.classList.remove("red", "yellow", "green");
+      blackoutBtn.classList.add("yellow");
+
+      if (on) {
+        // Fade to blackout (black screen)
+        viewerWindow.postMessage({ blackout: true }, "*");
+
+        setTimeout(() => {
+          blackoutBtn.classList.remove("yellow");
+          blackoutBtn.classList.add("green");
+          blackoutInProgress = false;
+          disableControls(false, true); // Disable other buttons during blackout active
+        }, 1200);
       } else {
+        // Fade back to last cue before blackout
+        sendCue(lastCueBeforeBlackout);
+
+        setTimeout(() => {
+          blackoutBtn.classList.remove("yellow");
+          blackoutBtn.classList.add("red");
+          blackoutInProgress = false;
+          disableControls(false, false);
+        }, 1200);
+      }
+    }
+
+    function disableControls(disable, blackoutActive = false) {
+      // Always blackoutBtn enabled for toggling unless blackout in progress
+      const buttons = [goBtn, prevBtn, endBtn];
+      buttons.forEach(b => {
+        b.disabled = disable || blackoutActive;
+      });
+    }
+
+    function toggleBlackout() {
+      if (blackoutInProgress) return;
+
+      if (!isBlackout) {
+        // Going into blackout: store current cue index for restore later
+        lastCueBeforeBlackout = currentCueIndex;
+        blackoutTransition(true);
+        isBlackout = true;
+      } else {
+        blackoutTransition(false);
         isBlackout = false;
-        updatePreviews();
-        sendCue();
       }
     }
 
     function endShow() {
-      window.location.href = "home.html";
+      if (blackoutInProgress) return;
+      if (isBlackout) return;
+
+      currentCueIndex = 0;
+      updateCurrentCueTitle();
+      updatePreview("currentPreview", cues[currentCueIndex]);
+      updatePreview("nextPreview", cues[currentCueIndex + 1]);
+      sendCue(currentCueIndex);
     }
 
-    updatePreviews();
-    setTimeout(() => sendCue(), 500);
+    // Initialize
+    updateCurrentCueTitle();
+    updatePreview("currentPreview", cues[currentCueIndex]);
+    updatePreview("nextPreview", cues[currentCueIndex + 1]);
+
+    // Open viewer and load first cue
+    if (!viewerWindow || viewerWindow.closed) {
+      viewerWindow = window.open("viewer.html", "viewerWindow");
+      setTimeout(() => {
+        sendCue(currentCueIndex);
+      }, 500);
+    } else {
+      sendCue(currentCueIndex);
+    }
   </script>
 </body>
 </html>
