@@ -5,157 +5,251 @@
   <title>Viewer</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      background: black;
+    html, body {
+      margin: 0; padding: 0;
+      background-color: black;
+      height: 100%; width: 100%;
       overflow: hidden;
     }
+
     #cueDisplay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      width: 100%; height: 100%;
+      position: relative;
+      overflow: hidden;
       background: black;
     }
-    #cueDisplay img, #cueDisplay video, #cueDisplay div {
+
+    #cueDisplay img,
+    #cueDisplay video,
+    #cueDisplay .blackout {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      position: absolute;
       opacity: 0;
-      transition: opacity 0.5s ease;
+      transition-property: opacity, transform;
+      transition-timing-function: ease-in-out;
+      transition-duration: 0s;
+      pointer-events: none;
     }
-    .fade-in-2s {
-      transition: opacity 2s ease;
+
+    #cueDisplay .active {
+      opacity: 1 !important;
+      z-index: 10;
+      pointer-events: auto;
     }
-    .fade-in-5s {
-      transition: opacity 5s ease;
-    }
-    .slide-in {
-      transform: translateX(100%);
-      animation: slideIn 1s forwards;
-    }
+
+    /* Slide-in animation */
     @keyframes slideIn {
+      from {
+        transform: translateX(100%) translateY(-50%);
+        opacity: 0;
+      }
       to {
-        transform: translateX(0);
+        transform: translate(-50%, -50%);
+        opacity: 1;
       }
     }
-    .active {
-      opacity: 1;
-      z-index: 1;
+
+    /* Blackout overlay styling */
+    #cueDisplay .blackout {
+      background: black;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      transform: none;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    #fsBtn {
+      position: absolute;
+      top: 10px; right: 10px;
+      z-index: 9999;
+      background: #2196f3;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #fsBtn:hover {
+      background: #1e88e5;
     }
   </style>
 </head>
 <body>
   <div id="cueDisplay"></div>
+  <button id="fsBtn" onclick="toggleFullscreen()">Fullscreen</button>
 
   <script>
     const cueDisplay = document.getElementById("cueDisplay");
 
-    function clearDisplay(callback) {
-      const children = [...cueDisplay.children];
-      if (!children.length) return callback?.();
+    // Keep track of currently shown element(s)
+    let activeElements = [];
 
-      children.forEach(el => {
-        el.classList.remove("active");
-        el.style.opacity = 0;
-        el.style.zIndex = 0;
+    // Transition durations map
+    const transitionDurations = {
+      cut: 0,
+      fade2: 2000,
+      fade5: 5000,
+      dissolve: 1000,
+      slide: 1000,
+    };
 
-        if (el.tagName === "VIDEO") {
-          el.pause();
-          el.removeAttribute("src");
-          el.load();
-        }
-
-        setTimeout(() => {
-          if (el.parentNode === cueDisplay) cueDisplay.removeChild(el);
-        }, 1000); // allow transition to finish
-      });
-
-      setTimeout(() => callback?.(), 1000);
-    }
-
+    // Apply transition styles and animations based on type
     function applyTransition(el, type) {
-      el.style.zIndex = 1;
+      const duration = transitionDurations[type] ?? 1000;
+      el.style.transitionDuration = duration + "ms";
+      el.style.transitionTimingFunction = "ease-in-out";
 
-      switch (type) {
-        case 'fade2':
-          el.classList.add('fade-in-2s');
+      switch(type) {
+        case "fade2":
+        case "fade5":
+        case "dissolve":
+          // fade in: opacity 0->1
+          el.style.opacity = 0;
+          // Trigger reflow
+          void el.offsetWidth;
+          el.style.opacity = 1;
           break;
-        case 'fade5':
-          el.classList.add('fade-in-5s');
+
+        case "slide":
+          // For slide: start off screen right, animate to center
+          el.style.opacity = 1;
+          el.style.transform = "translateX(100%) translateY(-50%)";
+          // Trigger reflow
+          void el.offsetWidth;
+          el.style.transitionProperty = "transform, opacity";
+          el.style.transform = "translate(-50%, -50%)";
           break;
-        case 'slide':
-          el.classList.add('slide-in');
-          break;
-        case 'cut':
-          el.style.transition = "none";
-          break;
-        case 'dissolve':
-          el.style.transition = "opacity 1s ease-in-out";
+
+        case "cut":
+        default:
+          // Immediate appear with no transition
+          el.style.transitionDuration = "0ms";
+          el.style.opacity = 1;
+          el.style.transform = "translate(-50%, -50%)";
           break;
       }
+    }
 
-      requestAnimationFrame(() => {
-        el.classList.add("active");
+    function clearOldElements(exclude = []) {
+      // Fade out old elements, then remove them after transition duration
+      activeElements.forEach(el => {
+        if (exclude.includes(el)) return; // keep these
+        const duration = parseFloat(el.style.transitionDuration) || 1000;
+        el.style.opacity = 0;
+        // Remove after transition ends
+        setTimeout(() => {
+          if (cueDisplay.contains(el)) cueDisplay.removeChild(el);
+        }, duration);
       });
+      // Keep only the elements not removed
+      activeElements = activeElements.filter(el => exclude.includes(el));
     }
 
     function showCue(data) {
-      clearDisplay(() => {
-        if (data.blackout) {
-          const blackout = document.createElement("div");
-          blackout.style.background = "black";
-          blackout.style.width = "100%";
-          blackout.style.height = "100%";
-          blackout.style.position = "absolute";
-          blackout.style.opacity = "0";
-          blackout.style.transition = "opacity 2s ease";
-          cueDisplay.appendChild(blackout);
-          requestAnimationFrame(() => {
-            blackout.style.opacity = "1";
-            blackout.classList.add("active");
-          });
-          return;
-        }
+      if (!data) return;
 
-        const isVideo = data.cue.endsWith(".mp4");
-        const el = isVideo ? document.createElement("video") : document.createElement("img");
-        el.src = data.cue;
+      if (data.blackout) {
+        // Blackout overlay crossfade with existing elements
+        // Create blackout div
+        const blackout = document.createElement("div");
+        blackout.classList.add("blackout");
+        blackout.style.opacity = 0;
+        blackout.style.transitionDuration = (transitionDurations["fade2"] || 2000) + "ms";
+        cueDisplay.appendChild(blackout);
 
-        el.style.position = "absolute";
-        el.style.top = "50%";
-        el.style.left = "50%";
-        el.style.transform = "translate(-50%, -50%)";
+        // Crossfade blackout in
+        requestAnimationFrame(() => {
+          blackout.style.opacity = 1;
+        });
 
-        if (isVideo) {
-          el.autoplay = data.autoplay ?? true;
-          el.loop = data.loop ?? true;
-          el.muted = true;
-          el.playsInline = true;
-          el.preload = "auto";
-          el.addEventListener("canplay", () => {
-            el.play();
-            applyTransition(el, data.transition);
-          });
-        } else {
-          el.onload = () => applyTransition(el, data.transition);
-        }
+        // Fade out old elements except blackout
+        clearOldElements([blackout]);
 
-        cueDisplay.appendChild(el);
-      });
+        // Remember blackout as active
+        activeElements.push(blackout);
+        return;
+      } else {
+        // If blackout currently active, remove it smoothly
+        activeElements = activeElements.filter(el => {
+          if (el.classList && el.classList.contains("blackout")) {
+            // Fade blackout out
+            el.style.opacity = 0;
+            setTimeout(() => {
+              if (cueDisplay.contains(el)) cueDisplay.removeChild(el);
+            }, transitionDurations["fade2"] || 2000);
+            return false; // remove from active
+          }
+          return true;
+        });
+      }
+
+      // Create new cue element
+      const isVideo = data.cue && data.cue.endsWith(".mp4");
+      if (!data.cue) {
+        // No cue = blank screen, clear all and done
+        clearOldElements();
+        return;
+      }
+
+      const el = isVideo ? document.createElement("video") : document.createElement("img");
+      el.src = data.cue;
+
+      if (isVideo) {
+        el.autoplay = data.autoplay ?? true;
+        el.loop = data.loop ?? true;
+        el.muted = true;
+        el.playsInline = true;
+        el.preload = "auto";
+        el.style.opacity = 0;
+        el.addEventListener("canplay", () => {
+          el.play();
+        });
+      }
+
+      el.style.position = "absolute";
+      el.style.top = "50%";
+      el.style.left = "50%";
+      el.style.transform = "translate(-50%, -50%)";
+      el.style.maxWidth = "100%";
+      el.style.maxHeight = "100%";
+      el.style.objectFit = "contain";
+      el.style.pointerEvents = "none";
+
+      cueDisplay.appendChild(el);
+
+      // Crossfade new element in
+      applyTransition(el, data.transition || "cut");
+
+      // Fade out all old except the new one (el)
+      clearOldElements([el]);
+
+      activeElements.push(el);
     }
 
     window.addEventListener("message", (event) => {
-      if (event.data?.cue || event.data?.blackout) {
-        showCue(event.data);
-      }
+      const data = event.data;
+      showCue(data);
     });
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        document.getElementById("fsBtn").style.display = "none";
+      } else {
+        document.exitFullscreen();
+        document.getElementById("fsBtn").style.display = "block";
+      }
+    }
   </script>
 </body>
 </html>
+
