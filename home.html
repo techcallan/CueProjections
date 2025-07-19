@@ -17,19 +17,10 @@
       window.location.href = 'index.html';
     }
 
-    // Predefined assignments
-    const assignments = {
-      'customer1': ['RigCheck', 'Trashion'],
-      'customer2': ['RigCheck'],
-      'customer3': ['RigCheck'],
-      'customer4': ['RigCheck'],
-      'customer5': ['RigCheck']
-    };
-
-    const shows = assignments[user] || ['RigCheck'];
-
+    const assignedShows = JSON.parse(localStorage.getItem('assignedShows') || '[]');
     const showListDiv = document.getElementById('showList');
-    shows.forEach(show => {
+
+    assignedShows.forEach(show => {
       const div = document.createElement('div');
       div.innerHTML = `
         <h3>${show}</h3>
@@ -48,4 +39,3 @@
   </script>
 </body>
 </html>
-
