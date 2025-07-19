@@ -5,105 +5,84 @@
   <title>Viewer</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    html, body {
+    body, html {
       margin: 0;
       padding: 0;
-      background-color: black;
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-    }
-
-    #cueDisplay {
-      width: 100%;
-      height: 100%;
       background: black;
-      position: relative;
       overflow: hidden;
     }
-
-    #cueDisplay img,
-    #cueDisplay video {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    #cueDisplay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: black;
+    }
+    #cueDisplay img, #cueDisplay video, #cueDisplay div {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
+      position: absolute;
       opacity: 0;
-      transition: opacity 1s ease-in-out;
+      transition: opacity 0.5s ease;
     }
-
-    .active {
-      opacity: 1 !important;
-      z-index: 1;
+    .fade-in-2s {
+      transition: opacity 2s ease;
     }
-
+    .fade-in-5s {
+      transition: opacity 5s ease;
+    }
     .slide-in {
+      transform: translateX(100%);
       animation: slideIn 1s forwards;
     }
-
-    .fade-in-2s {
-      transition: opacity 2s ease-in-out;
-    }
-
-    .fade-in-5s {
-      transition: opacity 5s ease-in-out;
-    }
-
     @keyframes slideIn {
-      from {
-        transform: translateX(100%) translateY(-50%);
-        opacity: 0;
-      }
       to {
-        transform: translate(-50%, -50%);
-        opacity: 1;
+        transform: translateX(0);
       }
     }
-
-    #fsBtn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 9999;
-      background: #2196f3;
-      color: white;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    #fsBtn:hover {
-      background: #1e88e5;
+    .active {
+      opacity: 1;
+      z-index: 1;
     }
   </style>
 </head>
 <body>
   <div id="cueDisplay"></div>
-  <button id="fsBtn" onclick="toggleFullscreen()">Fullscreen</button>
 
   <script>
     const cueDisplay = document.getElementById("cueDisplay");
 
     function clearDisplay(callback) {
-      const oldElements = Array.from(cueDisplay.children);
-      if (!oldElements.length) return callback?.();
+      const children = [...cueDisplay.children];
+      if (!children.length) return callback?.();
 
-      oldElements.forEach(el => {
+      children.forEach(el => {
+        el.classList.remove("active");
         el.style.opacity = 0;
+        el.style.zIndex = 0;
+
+        if (el.tagName === "VIDEO") {
+          el.pause();
+          el.removeAttribute("src");
+          el.load();
+        }
+
         setTimeout(() => {
-          cueDisplay.removeChild(el);
-        }, 1000);
+          if (el.parentNode === cueDisplay) cueDisplay.removeChild(el);
+        }, 1000); // allow transition to finish
       });
 
       setTimeout(() => callback?.(), 1000);
     }
 
     function applyTransition(el, type) {
+      el.style.zIndex = 1;
+
       switch (type) {
         case 'fade2':
           el.classList.add('fade-in-2s');
@@ -122,59 +101,61 @@
           break;
       }
 
-      // Force reflow
-      void el.offsetWidth;
-      el.classList.add("active");
+      requestAnimationFrame(() => {
+        el.classList.add("active");
+      });
     }
 
     function showCue(data) {
-      if (data.blackout) {
-        const blackout = document.createElement("div");
-        blackout.style.background = "black";
-        blackout.style.position = "absolute";
-        blackout.style.top = "0";
-        blackout.style.left = "0";
-        blackout.style.width = "100%";
-        blackout.style.height = "100%";
-        blackout.style.opacity = 0;
-        blackout.style.transition = "opacity 2s ease-in-out";
-        cueDisplay.appendChild(blackout);
-        requestAnimationFrame(() => {
-          blackout.style.opacity = 1;
-        });
-        return;
-      }
+      clearDisplay(() => {
+        if (data.blackout) {
+          const blackout = document.createElement("div");
+          blackout.style.background = "black";
+          blackout.style.width = "100%";
+          blackout.style.height = "100%";
+          blackout.style.position = "absolute";
+          blackout.style.opacity = "0";
+          blackout.style.transition = "opacity 2s ease";
+          cueDisplay.appendChild(blackout);
+          requestAnimationFrame(() => {
+            blackout.style.opacity = "1";
+            blackout.classList.add("active");
+          });
+          return;
+        }
 
-      const isVideo = data.cue.endsWith(".mp4");
-      const el = isVideo ? document.createElement("video") : document.createElement("img");
-      el.src = data.cue;
+        const isVideo = data.cue.endsWith(".mp4");
+        const el = isVideo ? document.createElement("video") : document.createElement("img");
+        el.src = data.cue;
 
-      if (isVideo) {
-        el.autoplay = data.autoplay ?? true;
-        el.loop = data.loop ?? true;
-        el.muted = true;
-        el.playsInline = true;
-        el.preload = "auto";
-        el.addEventListener("canplay", () => el.play());
-      }
+        el.style.position = "absolute";
+        el.style.top = "50%";
+        el.style.left = "50%";
+        el.style.transform = "translate(-50%, -50%)";
 
-      cueDisplay.appendChild(el);
-      applyTransition(el, data.transition || "fade2");
+        if (isVideo) {
+          el.autoplay = data.autoplay ?? true;
+          el.loop = data.loop ?? true;
+          el.muted = true;
+          el.playsInline = true;
+          el.preload = "auto";
+          el.addEventListener("canplay", () => {
+            el.play();
+            applyTransition(el, data.transition);
+          });
+        } else {
+          el.onload = () => applyTransition(el, data.transition);
+        }
+
+        cueDisplay.appendChild(el);
+      });
     }
 
     window.addEventListener("message", (event) => {
-      const data = event.data;
-      clearDisplay(() => showCue(data));
-    });
-
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-        document.getElementById("fsBtn").style.display = "none";
-      } else {
-        document.exitFullscreen();
+      if (event.data?.cue || event.data?.blackout) {
+        showCue(event.data);
       }
-    }
+    });
   </script>
 </body>
 </html>
