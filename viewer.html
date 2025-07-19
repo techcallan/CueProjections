@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Viewer</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css">
   <style>
     html, body {
       margin: 0;
@@ -100,10 +100,9 @@
 
   <script>
     const cueDisplay = document.getElementById("cueDisplay");
-
     let currentLayer = null;
 
-    function createCueElement(src, isVideo) {
+    function createCueElement(src, isVideo, autoplay, loop) {
       const wrapper = document.createElement("div");
       wrapper.className = "cueLayer";
 
@@ -111,21 +110,22 @@
       el.src = src;
 
       if (isVideo) {
-        el.autoplay = true;
-        el.loop = true;
-        el.muted = false;
+        el.autoplay = autoplay;
+        el.loop = loop;
+        el.muted = true;
         el.playsInline = true;
         el.preload = "auto";
-        el.addEventListener("canplay", () => el.play());
+        el.style.pointerEvents = "none";
+        el.addEventListener("canplay", () => el.play().catch(() => {}));
       }
 
       wrapper.appendChild(el);
       return wrapper;
     }
 
-    function transitionToCue(src, fadeTime = 1, transition = "fade2") {
+    function transitionToCue(src, transition = "fade2", autoplay = true, loop = true) {
       const isVideo = src.endsWith(".mp4");
-      const nextLayer = createCueElement(src, isVideo);
+      const nextLayer = createCueElement(src, isVideo, autoplay, loop);
       cueDisplay.appendChild(nextLayer);
 
       if (transition === "cut") {
@@ -138,9 +138,7 @@
       if (transition === "slide") {
         if (currentLayer) {
           currentLayer.classList.add("slide-out");
-          setTimeout(() => {
-            if (currentLayer) cueDisplay.removeChild(currentLayer);
-          }, 2000);
+          setTimeout(() => currentLayer?.remove(), 2000);
         }
         nextLayer.classList.add("slide-in");
         nextLayer.style.opacity = 1;
@@ -149,49 +147,58 @@
       }
 
       if (transition === "dissolve") {
-        nextLayer.style.animation = "dissolve 2s forwards";
-        setTimeout(() => cueDisplay.removeChild(nextLayer), 2000);
+        nextLayer.classList.add("active");
+        nextLayer.classList.add("dissolve");
+        setTimeout(() => nextLayer.remove(), 2000);
         return;
       }
 
-      // Handle fade2 or fade5
-      let fadeDuration = transition === "fade5" ? 5 : 2;
-
+      const fadeDuration = transition === "fade5" ? 5 : 2;
       nextLayer.style.transition = `opacity ${fadeDuration}s ease-in-out`;
       nextLayer.classList.add("active");
 
       if (currentLayer) {
         currentLayer.style.transition = `opacity ${fadeDuration}s ease-in-out`;
         currentLayer.classList.remove("active");
-        setTimeout(() => {
-          if (currentLayer) cueDisplay.removeChild(currentLayer);
-          currentLayer = nextLayer;
-        }, fadeDuration * 1000);
-      } else {
-        currentLayer = nextLayer;
+        setTimeout(() => currentLayer?.remove(), fadeDuration * 1000);
       }
+
+      currentLayer = nextLayer;
     }
 
     function fadeToBlack(duration = 2) {
       const blackLayer = document.createElement("div");
-      blackLayer.className = "cueLayer";
-      blackLayer.style.background = "black";
+      blackLayer.className = "cueLayer active";
+      blackLayer.style.backgroundColor = "black";
       blackLayer.style.transition = `opacity ${duration}s ease-in-out`;
+      blackLayer.style.opacity = "0";
       cueDisplay.appendChild(blackLayer);
+      requestAnimationFrame(() => {
+        blackLayer.style.opacity = "1";
+        if (currentLayer) {
+          currentLayer.style.transition = `opacity ${duration}s ease-in-out`;
+          currentLayer.style.opacity = "0";
+        }
+      });
+
       setTimeout(() => {
-        blackLayer.classList.add("active");
-        if (currentLayer) cueDisplay.removeChild(currentLayer);
+        if (currentLayer) currentLayer.remove();
         currentLayer = blackLayer;
-      }, 50);
+      }, duration * 1000);
     }
 
     window.addEventListener("message", (event) => {
       const data = event.data;
 
       if (data.blackout) {
-        fadeToBlack(data.fade || 2);
+        fadeToBlack(2); // always 2 seconds
       } else if (data.cue) {
-        transitionToCue(data.cue, data.fade || 1, data.transition || "fade2");
+        transitionToCue(
+          data.cue,
+          data.transition || "fade2",
+          data.autoplay ?? true,
+          data.loop ?? true
+        );
       }
     });
 
