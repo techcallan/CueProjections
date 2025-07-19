@@ -15,21 +15,31 @@
   </div>
 
   <script>
-    const users = ['admin', 'customer1', 'customer2', 'customer3', 'customer4', 'customer5'];
+    // Secure user-password mapping and show assignments
+    const users = {
+      "callan.chesser": { password: "Mabelcat1CC!!", shows: ["RigCheck", "Trashion"] },
+      "customer2": { password: "pass2", shows: ["RigCheck"] },
+      "customer3": { password: "pass3", shows: ["RigCheck"] },
+      "customer4": { password: "pass4", shows: ["RigCheck"] },
+      "customer5": { password: "pass5", shows: ["RigCheck"] },
+      "admin":     { password: "admin123", shows: [] }
+    };
 
     function login() {
-      const user = document.getElementById('username').value.trim();
-      const pass = document.getElementById('password').value.trim();
-      const errorMsg = document.getElementById('errorMsg');
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const errorMsg = document.getElementById("errorMsg");
 
-      if (users.includes(user) && user === pass) {
-        localStorage.setItem('username', user);
-        window.location.href = user === 'admin' ? 'admin.html' : 'home.html';
+      if (users[username] && users[username].password === password) {
+        localStorage.setItem("username", username);
+        localStorage.setItem("assignedShows", JSON.stringify(users[username].shows));
+        window.location.href = username === "admin" ? "admin.html" : "home.html";
       } else {
-        errorMsg.textContent = 'Invalid credentials.';
+        errorMsg.textContent = "Invalid credentials.";
       }
     }
   </script>
 </body>
 </html>
+
 
