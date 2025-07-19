@@ -1,89 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Projections - CueProjections</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <title>Projections</title>
+  <link rel="stylesheet" href="css/style.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #111;
-      color: #eee;
-    }
-    .cue-item {
-      border: 1px solid #444;
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 5px;
-      background-color: #222;
-    }
-    .cue-preview img, .cue-preview video {
+    .preview-container img, .preview-container video {
       max-width: 100%;
       max-height: 200px;
-    }
-    .controls button {
-      margin: 5px;
+      object-fit: contain;
     }
   </style>
 </head>
 <body>
-  <h1>Projections</h1>
-  <div id="cueList"></div>
-  <button onclick="sendBlackout()">Blackout</button>
+  <div class="main-container">
+    <h1>Projections Control</h1>
+    <h3 id="currentCueTitle">Cue 0 (Blank)</h3>
+
+    <div class="preview-container" style="display: flex; gap: 2em;">
+      <div>
+        <h4>Current Cue Preview</h4>
+        <div id="currentPreview"></div>
+      </div>
+      <div>
+        <h4>Next Cue Preview</h4>
+        <div id="nextPreview"></div>
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button onclick="prevCue()">Back</button>
+      <button onclick="goCue()">GO</button>
+      <button onclick="toggleBlackout()">Blackout</button>
+      <button onclick="endShow()">End Show</button>
+    </div>
+  </div>
 
   <script>
-    const viewerWindow = window.open('', 'viewerWindow');
-    const show = localStorage.getItem('currentShow') || 'RigCheck';
+    let viewerWindow = window.open("viewer.html", "viewerWindow");
+    let currentCueIndex = 0;
+    let isBlackout = false;
+    let lastCueBeforeBlackout = 0;
 
     const shows = {
-      RigCheck: [
-        { title: "Logo", file: "assets/1.png", transition: "fade2" },
-        { title: "Intro Video", file: "assets/2.mp4", transition: "fade5", autoplay: true, loop: true },
-        { title: "Slide In", file: "assets/3.png", transition: "slide" },
-        { title: "Cut Image", file: "assets/5.png", transition: "cut" },
-        { title: "Looping Video", file: "assets/4.mp4", transition: "fade2", autoplay: true, loop: true }
+      "RigCheck": [
+        { title: "Blank", file: "", transition: "cut" },
+        { title: "Slide Cue", file: "1.png", transition: "slide" },
+        { title: "Fade In", file: "2.png", transition: "fade2" },
+        { title: "Fade Slow", file: "3.png", transition: "fade5" },
+        { title: "Dissolve Cue", file: "5.png", transition: "dissolve" },
+        { title: "Video Cue", file: "4.mp4", transition: "fade2", autoplay: true, loop: true }
       ],
-      Trashion: [
-        { title: "Opening", file: "assets/opening.mp4", transition: "fade2", autoplay: true, loop: false },
-        { title: "Scene Image", file: "assets/scene.png", transition: "slide" }
+      "Trashion": [
+        { title: "Start", file: "start.png", transition: "fade2" },
+        { title: "Walk Video", file: "walk.mp4", transition: "slide", autoplay: true, loop: true }
       ]
     };
 
-    const cues = shows[show] || [];
-    const cueListDiv = document.getElementById("cueList");
+    const show = localStorage.getItem("currentShow") || "RigCheck";
+    const cues = shows[show] || [{ title: "Blank", file: "", transition: "cut" }];
 
-    cues.forEach((cue, index) => {
-      const cueDiv = document.createElement("div");
-      cueDiv.className = "cue-item";
-
-      cueDiv.innerHTML = `
-        <h3>${cue.title}</h3>
-        <div class="cue-preview" id="preview-${index}"></div>
-        <div class="controls">
-          <button onclick="triggerCue(${index})">Go</button>
-        </div>
-      `;
-      cueListDiv.appendChild(cueDiv);
-      updatePreview(`preview-${index}`, cue);
-    });
-
-    function triggerCue(index) {
-      const cue = cues[index];
-      if (viewerWindow) {
-        viewerWindow.postMessage({
-          cue: cue.file,
-          transition: cue.transition || 'fade2',
-          autoplay: cue.autoplay ?? true,
-          loop: cue.loop ?? true
-        }, '*');
-      }
-    }
-
-    function sendBlackout() {
-      if (viewerWindow) {
-        viewerWindow.postMessage({ blackout: true }, '*');
-      }
+    function getCuePath(cue) {
+      return cue.file ? `assets/${show}/${cue.file}` : "";
     }
 
     function updatePreview(containerId, cue) {
@@ -91,8 +69,8 @@
       container.innerHTML = "";
       if (!cue || !cue.file) return;
 
-      const path = cue.file;
-      const isVideo = path.endsWith(".mp4");
+      const path = getCuePath(cue);
+      const isVideo = cue.file.endsWith(".mp4");
       const el = isVideo ? document.createElement("video") : document.createElement("img");
       el.src = path;
 
@@ -102,13 +80,68 @@
         el.muted = true;
         el.playsInline = true;
         el.preload = "auto";
-        el.style.maxHeight = "200px";
-        el.style.maxWidth = "100%";
-        el.addEventListener("canplay", () => el.play().catch(() => {}));
+        el.addEventListener("canplay", () => el.play());
       }
 
       container.appendChild(el);
     }
+
+    function updatePreviews() {
+      updatePreview("currentPreview", cues[currentCueIndex]);
+      updatePreview("nextPreview", cues[currentCueIndex + 1]);
+      document.getElementById("currentCueTitle").textContent = `Cue ${currentCueIndex}: ${cues[currentCueIndex].title}`;
+    }
+
+    function sendCue(index = currentCueIndex, overrideBlackout = null) {
+      if (!viewerWindow || viewerWindow.closed) return;
+      const cue = cues[index];
+      const transition = cue.transition || "cut";
+
+      viewerWindow.postMessage({
+        cue: getCuePath(cue),
+        title: cue.title,
+        blackout: overrideBlackout ?? isBlackout,
+        transition: transition,
+        autoplay: cue.autoplay ?? true,
+        loop: cue.loop ?? true
+      }, "*");
+    }
+
+    function goCue() {
+      if (isBlackout) toggleBlackout();
+      if (currentCueIndex < cues.length - 1) {
+        currentCueIndex++;
+        updatePreviews();
+        sendCue();
+      }
+    }
+
+    function prevCue() {
+      if (currentCueIndex > 0) {
+        currentCueIndex--;
+        updatePreviews();
+        sendCue();
+      }
+    }
+
+    function toggleBlackout() {
+      if (!isBlackout) {
+        lastCueBeforeBlackout = currentCueIndex;
+        isBlackout = true;
+        viewerWindow.postMessage({ blackout: true, transition: "fade2" }, "*");
+      } else {
+        isBlackout = false;
+        updatePreviews();
+        sendCue();
+      }
+    }
+
+    function endShow() {
+      window.location.href = "home.html";
+    }
+
+    updatePreviews();
+    setTimeout(() => sendCue(), 500);
   </script>
 </body>
 </html>
