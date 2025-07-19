@@ -11,76 +11,147 @@
       height: 100%; width: 100%;
       overflow: hidden;
     }
-
     #cueDisplay {
       width: 100%; height: 100%;
+      background: black;
       position: relative;
       overflow: hidden;
-      background: black;
     }
-
-    #cueDisplay img,
-    #cueDisplay video,
-    #cueDisplay .blackout {
+    #cueDisplay img, #cueDisplay video {
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      max-width: 100%;
-      max-height: 100%;
+      max-width: 100%; max-height: 100%;
       object-fit: contain;
       opacity: 0;
-      transition-property: opacity, transform;
-      transition-timing-function: ease-in-out;
-      transition-duration: 0s;
-      pointer-events: none;
+      transition: opacity 1s ease-in-out, transform 1s ease-in-out, filter 1s ease-in-out;
+      backface-visibility: hidden;
     }
-
-    #cueDisplay .active {
+    /* Active cue */
+    .active {
       opacity: 1 !important;
       z-index: 10;
-      pointer-events: auto;
     }
 
-    /* Slide-in animation */
-    @keyframes slideIn {
+    /* Transitions */
+
+    /* Slide directions */
+    .slide-in-left {
+      animation: slideInLeft 1s forwards;
+    }
+    .slide-in-right {
+      animation: slideInRight 1s forwards;
+    }
+    .slide-in-up {
+      animation: slideInUp 1s forwards;
+    }
+    .slide-in-down {
+      animation: slideInDown 1s forwards;
+    }
+
+    @keyframes slideInLeft {
+      from { transform: translate(calc(-50% + 100vw), -50%); opacity: 0; }
+      to { transform: translate(-50%, -50%); opacity: 1; }
+    }
+    @keyframes slideInRight {
+      from { transform: translate(calc(-50% - 100vw), -50%); opacity: 0; }
+      to { transform: translate(-50%, -50%); opacity: 1; }
+    }
+    @keyframes slideInUp {
+      from { transform: translate(-50%, calc(-50% + 100vh)); opacity: 0; }
+      to { transform: translate(-50%, -50%); opacity: 1; }
+    }
+    @keyframes slideInDown {
+      from { transform: translate(-50%, calc(-50% - 100vh)); opacity: 0; }
+      to { transform: translate(-50%, -50%); opacity: 1; }
+    }
+
+    /* Zoom */
+    .zoom-in {
+      animation: zoomIn 1s forwards;
+    }
+    .zoom-out {
+      animation: zoomOut 1s forwards;
+    }
+    @keyframes zoomIn {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    @keyframes zoomOut {
+      from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      to { opacity: 0; transform: translate(-50%, -50%) scale(1.3); }
+    }
+
+    /* Flip */
+    .flip-in {
+      animation: flipIn 1s forwards;
+      transform-style: preserve-3d;
+    }
+    @keyframes flipIn {
       from {
-        transform: translateX(100%) translateY(-50%);
         opacity: 0;
+        transform: translate(-50%, -50%) rotateY(90deg);
       }
       to {
-        transform: translate(-50%, -50%);
         opacity: 1;
+        transform: translate(-50%, -50%) rotateY(0deg);
       }
     }
 
-    /* Blackout overlay styling */
-    #cueDisplay .blackout {
-      background: black;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      transform: none;
-      z-index: 20;
-      pointer-events: none;
+    /* Blur */
+    .blur-in {
+      animation: blurIn 1s forwards;
+    }
+    @keyframes blurIn {
+      from { opacity: 0; filter: blur(10px); }
+      to { opacity: 1; filter: blur(0); }
     }
 
-    #fsBtn {
+    /* Rotate */
+    .rotate-in {
+      animation: rotateIn 1s forwards;
+    }
+    @keyframes rotateIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) rotate(-90deg);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
+    }
+
+    /* Pixelate */
+    .pixelate-in {
+      animation: pixelateIn 1s forwards;
+      filter: url(#pixelate);
+    }
+    @keyframes pixelateIn {
+      from { opacity: 0; filter: url(#pixelate); }
+      to { opacity: 1; filter: none; }
+    }
+
+    /* Wipe */
+    .wipe-in {
+      position: relative;
+      overflow: hidden;
+    }
+    .wipe-in::before {
+      content: "";
       position: absolute;
-      top: 10px; right: 10px;
-      z-index: 9999;
-      background: #2196f3;
-      color: white;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
+      left: 0; top: 0;
+      width: 0;
+      height: 100%;
+      background: black;
+      z-index: 20;
+      animation: wipeAnim 1s forwards;
+    }
+    @keyframes wipeAnim {
+      from { width: 100%; }
+      to { width: 0; }
     }
 
-    #fsBtn:hover {
-      background: #1e88e5;
-    }
   </style>
 </head>
 <body>
@@ -90,116 +161,123 @@
   <script>
     const cueDisplay = document.getElementById("cueDisplay");
 
-    // Keep track of currently shown element(s)
-    let activeElements = [];
+    // Store current displayed element for dissolve crossfade
+    let currentEl = null;
 
-    // Transition durations map
-    const transitionDurations = {
-      cut: 0,
-      fade2: 2000,
-      fade5: 5000,
-      dissolve: 1000,
-      slide: 1000,
-    };
+    function clearDisplay(callback, transition) {
+      if (!currentEl) return callback?.();
 
-    // Apply transition styles and animations based on type
-    function applyTransition(el, type) {
-      const duration = transitionDurations[type] ?? 1000;
-      el.style.transitionDuration = duration + "ms";
-      el.style.transitionTimingFunction = "ease-in-out";
-
-      switch(type) {
-        case "fade2":
-        case "fade5":
-        case "dissolve":
-          // fade in: opacity 0->1
-          el.style.opacity = 0;
-          // Trigger reflow
-          void el.offsetWidth;
-          el.style.opacity = 1;
-          break;
-
-        case "slide":
-          // For slide: start off screen right, animate to center
-          el.style.opacity = 1;
-          el.style.transform = "translateX(100%) translateY(-50%)";
-          // Trigger reflow
-          void el.offsetWidth;
-          el.style.transitionProperty = "transform, opacity";
-          el.style.transform = "translate(-50%, -50%)";
-          break;
-
-        case "cut":
-        default:
-          // Immediate appear with no transition
-          el.style.transitionDuration = "0ms";
-          el.style.opacity = 1;
-          el.style.transform = "translate(-50%, -50%)";
-          break;
+      if(transition === 'dissolve') {
+        // Crossfade: keep both elements and fade old one out, new one fades in in showCue
+        currentEl.style.transition = 'opacity 1s ease-in-out';
+        currentEl.style.opacity = 0;
+        setTimeout(() => {
+          if (currentEl && currentEl.parentElement) {
+            cueDisplay.removeChild(currentEl);
+            currentEl = null;
+          }
+          callback?.();
+        }, 1000);
+      } else {
+        // Default: fade out old element then remove
+        currentEl.style.opacity = 0;
+        setTimeout(() => {
+          if (currentEl && currentEl.parentElement) {
+            cueDisplay.removeChild(currentEl);
+            currentEl = null;
+          }
+          callback?.();
+        }, 500);
       }
     }
 
-    function clearOldElements(exclude = []) {
-      // Fade out old elements, then remove them after transition duration
-      activeElements.forEach(el => {
-        if (exclude.includes(el)) return; // keep these
-        const duration = parseFloat(el.style.transitionDuration) || 1000;
-        el.style.opacity = 0;
-        // Remove after transition ends
-        setTimeout(() => {
-          if (cueDisplay.contains(el)) cueDisplay.removeChild(el);
-        }, duration);
-      });
-      // Keep only the elements not removed
-      activeElements = activeElements.filter(el => exclude.includes(el));
+    function applyTransition(el, type) {
+      el.style.transition = "none"; // Reset first
+
+      switch (type) {
+        case 'fade2':
+          el.style.transition = "opacity 2s ease-in-out";
+          el.style.opacity = 0;
+          requestAnimationFrame(() => {
+            el.style.opacity = 1;
+          });
+          break;
+        case 'fade5':
+          el.style.transition = "opacity 5s ease-in-out";
+          el.style.opacity = 0;
+          requestAnimationFrame(() => {
+            el.style.opacity = 1;
+          });
+          break;
+        case 'slide':
+        case 'slideRight':
+          el.classList.add('slide-in-right');
+          break;
+        case 'slideLeft':
+          el.classList.add('slide-in-left');
+          break;
+        case 'slideUp':
+          el.classList.add('slide-in-up');
+          break;
+        case 'slideDown':
+          el.classList.add('slide-in-down');
+          break;
+        case 'zoomIn':
+          el.classList.add('zoom-in');
+          break;
+        case 'zoomOut':
+          el.classList.add('zoom-out');
+          break;
+        case 'flip':
+          el.classList.add('flip-in');
+          break;
+        case 'blur':
+          el.classList.add('blur-in');
+          break;
+        case 'rotate':
+          el.classList.add('rotate-in');
+          break;
+        case 'pixelate':
+          el.classList.add('pixelate-in');
+          break;
+        case 'wipe':
+          el.classList.add('wipe-in');
+          break;
+        case 'cut':
+          el.style.opacity = 1;
+          break;
+        case 'dissolve':
+          // For dissolve, we do crossfade: new el starts at 0 opacity and transitions to 1
+          el.style.opacity = 0;
+          requestAnimationFrame(() => {
+            el.style.transition = "opacity 1s ease-in-out";
+            el.style.opacity = 1;
+          });
+          break;
+        default:
+          el.style.opacity = 1;
+          break;
+      }
     }
 
     function showCue(data) {
-      if (!data) return;
-
       if (data.blackout) {
-        // Blackout overlay crossfade with existing elements
-        // Create blackout div
+        // Blackout immediately - remove all elements and add black div
+        cueDisplay.innerHTML = "";
         const blackout = document.createElement("div");
-        blackout.classList.add("blackout");
-        blackout.style.opacity = 0;
-        blackout.style.transitionDuration = (transitionDurations["fade2"] || 2000) + "ms";
+        blackout.style.background = "black";
+        blackout.style.position = "absolute";
+        blackout.style.top = "0";
+        blackout.style.left = "0";
+        blackout.style.width = "100%";
+        blackout.style.height = "100%";
+        blackout.style.opacity = 1;
         cueDisplay.appendChild(blackout);
-
-        // Crossfade blackout in
-        requestAnimationFrame(() => {
-          blackout.style.opacity = 1;
-        });
-
-        // Fade out old elements except blackout
-        clearOldElements([blackout]);
-
-        // Remember blackout as active
-        activeElements.push(blackout);
-        return;
-      } else {
-        // If blackout currently active, remove it smoothly
-        activeElements = activeElements.filter(el => {
-          if (el.classList && el.classList.contains("blackout")) {
-            // Fade blackout out
-            el.style.opacity = 0;
-            setTimeout(() => {
-              if (cueDisplay.contains(el)) cueDisplay.removeChild(el);
-            }, transitionDurations["fade2"] || 2000);
-            return false; // remove from active
-          }
-          return true;
-        });
-      }
-
-      // Create new cue element
-      const isVideo = data.cue && data.cue.endsWith(".mp4");
-      if (!data.cue) {
-        // No cue = blank screen, clear all and done
-        clearOldElements();
+        currentEl = blackout;
         return;
       }
 
+      const isVideo = data.cue.endsWith(".mp4");
       const el = isVideo ? document.createElement("video") : document.createElement("img");
       el.src = data.cue;
 
@@ -209,12 +287,11 @@
         el.muted = true;
         el.playsInline = true;
         el.preload = "auto";
-        el.style.opacity = 0;
-        el.addEventListener("canplay", () => {
-          el.play();
-        });
+        el.addEventListener("canplay", () => el.play());
       }
 
+      el.style.opacity = 0;
+      el.style.zIndex = 5;
       el.style.position = "absolute";
       el.style.top = "50%";
       el.style.left = "50%";
@@ -222,22 +299,18 @@
       el.style.maxWidth = "100%";
       el.style.maxHeight = "100%";
       el.style.objectFit = "contain";
-      el.style.pointerEvents = "none";
 
       cueDisplay.appendChild(el);
 
-      // Crossfade new element in
-      applyTransition(el, data.transition || "cut");
+      applyTransition(el, data.transition || "fade2");
 
-      // Fade out all old except the new one (el)
-      clearOldElements([el]);
-
-      activeElements.push(el);
+      // Update current element reference
+      currentEl = el;
     }
 
     window.addEventListener("message", (event) => {
       const data = event.data;
-      showCue(data);
+      clearDisplay(() => showCue(data), data.transition);
     });
 
     function toggleFullscreen() {
@@ -252,4 +325,5 @@
   </script>
 </body>
 </html>
+
 
