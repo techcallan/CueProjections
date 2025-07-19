@@ -80,14 +80,25 @@
     let blackoutInProgress = false;
 
     const shows = {
-      "RigCheck": [
-        { title: "Blank", file: "", transition: "cut" },
-        { title: "Slide Cue", file: "1.png", transition: "slideRight" },
-        { title: "Fade In", file: "2.png", transition: "fade2" },
-        { title: "Fade Slow", file: "3.png", transition: "fade5" },
-        { title: "Dissolve Cue", file: "4.png", transition: "dissolve" },
-        { title: "Video Cue", file: "video.mp4", transition: "fade2", autoplay: true, loop: true }
-      ],
+"RigCheck": [
+  { title: "Blank", file: "", transition: "cut" },
+  { title: "cut", file: "1.png", transition: "cut" },
+  { title: "fade2", file: "2.png", transition: "fade2" },
+  { title: "fade5", file: "3.png", transition: "fade5" },
+  { title: "slideRight", file: "5.png", transition: "slideRight" },
+  { title: "slideLeft", file: "1.png", transition: "slideLeft" },
+  { title: "slideUp", file: "2.png", transition: "slideUp" },
+  { title: "slideDown", file: "3.png", transition: "slideDown" },
+  { title: "zoomIn", file: "5.png", transition: "zoomIn" },
+  { title: "zoomOut", file: "1.png", transition: "zoomOut" },
+  { title: "flip", file: "2.png", transition: "flip" },
+  { title: "blur", file: "3.png", transition: "blur" },
+  { title: "rotate", file: "5.png", transition: "rotate" },
+  { title: "pixelate", file: "1.png", transition: "pixelate" },
+  { title: "wipe", file: "2.png", transition: "wipe" },
+  { title: "dissolve", file: "3.png", transition: "dissolve" }
+],
+
       "Trashion": [
         { title: "Start", file: "start.png", transition: "fade2" },
         { title: "Walk Video", file: "walk.mp4", transition: "slideLeft", autoplay: true, loop: true }
@@ -156,33 +167,23 @@
     }
 
     function goCue() {
-      if (blackoutInProgress) return;
-      if (isBlackout) return;
+      if (blackoutInProgress || isBlackout) return;
 
-      sendCue(currentCueIndex);
-      updateCurrentCueTitle();
-      updatePreview("currentPreview", cues[currentCueIndex]);
-      updatePreview("nextPreview", cues[currentCueIndex + 1]);
-    }
-
-    function prevCue() {
-      if (blackoutInProgress) return;
-      if (isBlackout) return;
-
-      if (currentCueIndex > 0) {
-        currentCueIndex--;
+      if (currentCueIndex < cues.length - 1) {
+        currentCueIndex++;
+        sendCue(currentCueIndex);
         updateCurrentCueTitle();
         updatePreview("currentPreview", cues[currentCueIndex]);
         updatePreview("nextPreview", cues[currentCueIndex + 1]);
       }
     }
 
-    function nextCue() {
-      if (blackoutInProgress) return;
-      if (isBlackout) return;
+    function prevCue() {
+      if (blackoutInProgress || isBlackout) return;
 
-      if (currentCueIndex < cues.length - 1) {
-        currentCueIndex++;
+      if (currentCueIndex > 0) {
+        currentCueIndex--;
+        sendCue(currentCueIndex);
         updateCurrentCueTitle();
         updatePreview("currentPreview", cues[currentCueIndex]);
         updatePreview("nextPreview", cues[currentCueIndex + 1]);
@@ -197,17 +198,15 @@
       blackoutBtn.classList.add("yellow");
 
       if (on) {
-        // Fade to blackout (black screen)
         viewerWindow.postMessage({ blackout: true }, "*");
 
         setTimeout(() => {
           blackoutBtn.classList.remove("yellow");
           blackoutBtn.classList.add("green");
           blackoutInProgress = false;
-          disableControls(false, true); // Disable other buttons during blackout active
+          disableControls(false, true);
         }, 1200);
       } else {
-        // Fade back to last cue before blackout
         sendCue(lastCueBeforeBlackout);
 
         setTimeout(() => {
@@ -220,7 +219,6 @@
     }
 
     function disableControls(disable, blackoutActive = false) {
-      // Always blackoutBtn enabled for toggling unless blackout in progress
       const buttons = [goBtn, prevBtn, endBtn];
       buttons.forEach(b => {
         b.disabled = disable || blackoutActive;
@@ -231,7 +229,6 @@
       if (blackoutInProgress) return;
 
       if (!isBlackout) {
-        // Going into blackout: store current cue index for restore later
         lastCueBeforeBlackout = currentCueIndex;
         blackoutTransition(true);
         isBlackout = true;
@@ -242,8 +239,7 @@
     }
 
     function endShow() {
-      if (blackoutInProgress) return;
-      if (isBlackout) return;
+      if (blackoutInProgress || isBlackout) return;
 
       currentCueIndex = 0;
       updateCurrentCueTitle();
@@ -257,7 +253,6 @@
     updatePreview("currentPreview", cues[currentCueIndex]);
     updatePreview("nextPreview", cues[currentCueIndex + 1]);
 
-    // Open viewer and load first cue
     if (!viewerWindow || viewerWindow.closed) {
       viewerWindow = window.open("viewer.html", "viewerWindow");
       setTimeout(() => {
