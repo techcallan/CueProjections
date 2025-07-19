@@ -6,203 +6,414 @@
   <link rel="stylesheet" href="css/style.css" />
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       background-color: black;
-      height: 100%;
-      width: 100%;
+      height: 100%; width: 100%;
       overflow: hidden;
     }
-
     #cueDisplay {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       background: black;
       position: relative;
       overflow: hidden;
     }
-
-    .media {
+    #cueDisplay img, #cueDisplay video {
       position: absolute;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      max-width: 100%;
-      max-height: 100%;
+      max-width: 100%; max-height: 100%;
       object-fit: contain;
       opacity: 0;
-      z-index: 0;
+      backface-visibility: hidden;
+      will-change: opacity, transform, filter;
     }
-
+    /* Active cue */
     .active {
       opacity: 1 !important;
-      z-index: 2;
+      z-index: 10;
     }
 
-    .fade2 { transition: opacity 2s ease-in-out; }
-    .fade5 { transition: opacity 5s ease-in-out; }
+    /* Transitions */
 
-    @keyframes slideRight { from { transform: translate(100%, -50%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
-    @keyframes slideLeft { from { transform: translate(-200%, -50%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
-    @keyframes slideUp { from { transform: translate(-50%, -200%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
-    @keyframes slideDown { from { transform: translate(-50%, 100%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
-
-    .slideRight { animation: slideRight 1s forwards; }
-    .slideLeft { animation: slideLeft 1s forwards; }
-    .slideUp { animation: slideUp 1s forwards; }
-    .slideDown { animation: slideDown 1s forwards; }
-
-    @keyframes zoomIn { from { transform: scale(0.7) translate(-50%, -50%); opacity: 0; } to { transform: scale(1) translate(-50%, -50%); opacity: 1; } }
-    @keyframes zoomOut { from { transform: scale(1.4) translate(-50%, -50%); opacity: 0; } to { transform: scale(1) translate(-50%, -50%); opacity: 1; } }
-
-    .zoomIn { animation: zoomIn 1s forwards; }
-    .zoomOut { animation: zoomOut 1s forwards; }
-
-    @keyframes flip {
-      from { transform: rotateY(90deg) translate(-50%, -50%); opacity: 0; }
-      to { transform: rotateY(0deg) translate(-50%, -50%); opacity: 1; }
+    /* Slide directions */
+    .slide-in-left {
+      animation: slideInLeft 1s forwards;
     }
-    .flip { animation: flip 1s forwards; }
-
-    @keyframes rotate {
-      from { transform: rotate(90deg) translate(-50%, -50%); opacity: 0; }
-      to { transform: rotate(0deg) translate(-50%, -50%); opacity: 1; }
+    .slide-in-right {
+      animation: slideInRight 1s forwards;
     }
-    .rotate { animation: rotate 1s forwards; }
+    .slide-in-up {
+      animation: slideInUp 1s forwards;
+    }
+    .slide-in-down {
+      animation: slideInDown 1s forwards;
+    }
 
+    @keyframes slideInLeft {
+      from { transform: translate(calc(-50% + 100vw), -50%); opacity: 0; }
+      to { transform: translate(-50%, -50%); opacity: 1; }
+    }
+    @keyframes slideInRight {
+      from { transform: translate(calc(-50% - 100vw), -50%); opacity: 0; }
+      to { transform: translate(-50%, -50%); opacity: 1; }
+    }
+    @keyframes slideInUp {
+      from { transform: translate(-50%, calc(-50% + 100vh)); opacity: 0; }
+      to { transform: translate(-50%, -50%); opacity: 1; }
+    }
+    @keyframes slideInDown {
+      from { transform: translate(-50%, calc(-50% - 100vh)); opacity: 0; }
+      to { transform: translate(-50%, -50%); opacity: 1; }
+    }
+
+    /* Zoom */
+    .zoom-in {
+      animation: zoomIn 1s forwards;
+    }
+    .zoom-out {
+      animation: zoomOut 1s forwards;
+    }
+    @keyframes zoomIn {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    @keyframes zoomOut {
+      from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      to { opacity: 0; transform: translate(-50%, -50%) scale(1.3); }
+    }
+
+    /* Flip */
+    .flip-in {
+      animation: flipIn 1s forwards;
+      transform-style: preserve-3d;
+    }
+    @keyframes flipIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) rotateY(90deg);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) rotateY(0deg);
+      }
+    }
+
+    /* Blur */
+    .blur-in {
+      animation: blurIn 1s forwards;
+    }
     @keyframes blurIn {
-      from { filter: blur(20px); opacity: 0; }
-      to { filter: blur(0px); opacity: 1; }
+      from { opacity: 0; filter: blur(10px); }
+      to { opacity: 1; filter: blur(0); }
     }
-    .blur { animation: blurIn 1s forwards; }
 
-    #fsBtn {
+    /* Rotate */
+    .rotate-in {
+      animation: rotateIn 1s forwards;
+    }
+    @keyframes rotateIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) rotate(-90deg);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
+    }
+
+    /* Pixelate */
+    .pixelate-in {
+      animation: pixelateIn 1s forwards;
+      filter: url(#pixelate);
+    }
+    @keyframes pixelateIn {
+      from { opacity: 0; filter: url(#pixelate); }
+      to { opacity: 1; filter: none; }
+    }
+
+    /* Wipe */
+    .wipe-in {
+      position: relative;
+      overflow: hidden;
+    }
+    .wipe-in::before {
+      content: "";
       position: absolute;
+      left: 0; top: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      z-index: 20;
+      animation: wipeAnim 1s forwards;
+    }
+    @keyframes wipeAnim {
+      from { width: 100%; }
+      to { width: 0; }
+    }
+
+    /* Blackout overlay */
+    #blackoutOverlay {
+      position: absolute;
+      top:0; left:0;
+      width: 100%; height: 100%;
+      background: black;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.2s ease-in-out;
+      z-index: 9999;
+    }
+
+    /* Fullscreen button */
+    #fsBtn {
+      position: fixed;
       top: 10px;
       right: 10px;
-      z-index: 9999;
-      background: #2196f3;
-      color: white;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      font-weight: bold;
+      z-index: 10000;
+      padding: 8px 12px;
+      font-size: 14px;
       cursor: pointer;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      border-radius: 4px;
+      transition: background 0.3s;
     }
-
     #fsBtn:hover {
-      background: #1e88e5;
+      background: rgba(255,255,255,0.4);
     }
   </style>
 </head>
 <body>
   <div id="cueDisplay"></div>
+  <div id="blackoutOverlay"></div>
   <button id="fsBtn" onclick="toggleFullscreen()">Fullscreen</button>
 
   <script>
     const cueDisplay = document.getElementById("cueDisplay");
-    let lastEl = null;
+    const blackoutOverlay = document.getElementById("blackoutOverlay");
 
-    function clearOldMedia() {
-      if (lastEl) {
-        lastEl.remove();
-        lastEl = null;
+    // Store current displayed element for dissolve crossfade
+    let currentEl = null;
+
+    // Helper to remove element safely
+    function removeEl(el) {
+      if (el && el.parentElement) el.parentElement.removeChild(el);
+    }
+
+    // Clear current display with transition and then callback
+    function clearDisplay(callback, transition) {
+      if (!currentEl) return callback?.();
+
+      if(transition === 'dissolve') {
+        // Crossfade: fade out currentEl over 1s, keep it until done
+        currentEl.style.transition = 'opacity 1s ease-in-out';
+        currentEl.style.opacity = 0;
+        setTimeout(() => {
+          removeEl(currentEl);
+          currentEl = null;
+          callback?.();
+        }, 1000);
+      } else if(transition === 'fade5') {
+        // fade out slower
+        currentEl.style.transition = 'opacity 5s ease-in-out';
+        currentEl.style.opacity = 0;
+        setTimeout(() => {
+          removeEl(currentEl);
+          currentEl = null;
+          callback?.();
+        }, 5000);
+      } else if(transition === 'fade2') {
+        currentEl.style.transition = 'opacity 2s ease-in-out';
+        currentEl.style.opacity = 0;
+        setTimeout(() => {
+          removeEl(currentEl);
+          currentEl = null;
+          callback?.();
+        }, 2000);
+      } else {
+        // Default fade out 0.5s
+        currentEl.style.transition = 'opacity 0.5s ease-in-out';
+        currentEl.style.opacity = 0;
+        setTimeout(() => {
+          removeEl(currentEl);
+          currentEl = null;
+          callback?.();
+        }, 500);
       }
     }
 
-    function showCue(data) {
-      const isVideo = data.cue.endsWith(".mp4");
-      const newEl = document.createElement(isVideo ? "video" : "img");
-      newEl.classList.add("media");
-      newEl.src = data.cue;
+    // Apply transition classes or styles on element for showing cue
+    function applyTransition(el, type) {
+      el.style.transition = "none"; // reset transition
+      el.style.opacity = 0;
+      el.style.transform = "translate(-50%, -50%)";
 
-      if (isVideo) {
-        newEl.autoplay = data.autoplay ?? true;
-        newEl.loop = data.loop ?? true;
-        newEl.muted = true;
-        newEl.playsInline = true;
-        newEl.preload = "auto";
-        newEl.addEventListener("canplay", () => newEl.play());
-      }
-
-      // Special: blackout cue
-      if (data.blackout) {
-        const blackout = document.createElement("div");
-        blackout.style.background = "black";
-        blackout.style.position = "absolute";
-        blackout.style.top = "0";
-        blackout.style.left = "0";
-        blackout.style.width = "100%";
-        blackout.style.height = "100%";
-        blackout.style.opacity = "0";
-        blackout.style.transition = "opacity 1s ease-in-out";
-        blackout.style.zIndex = 10;
-        cueDisplay.appendChild(blackout);
-        requestAnimationFrame(() => blackout.style.opacity = "1");
-        return;
-      }
-
-      cueDisplay.appendChild(newEl);
-
-      // Prepare dissolve (crossfade)
-      if (data.transition === "dissolve" && lastEl) {
-        newEl.style.transition = "opacity 1s ease-in-out";
-        lastEl.style.transition = "opacity 1s ease-in-out";
-        lastEl.style.zIndex = 1;
-        newEl.style.zIndex = 2;
-        newEl.style.opacity = 0;
-
-        requestAnimationFrame(() => {
-          newEl.style.opacity = 1;
-          lastEl.style.opacity = 0;
-        });
-
-        setTimeout(() => {
-          clearOldMedia();
-          lastEl = newEl;
-        }, 1000);
-        return;
-      }
-
-      // Other transitions
-      const transition = data.transition || "fade2";
-      newEl.classList.add("active");
-
-      switch (transition) {
-        case "fade2":
-        case "fade5":
-          newEl.classList.add(transition);
+      switch (type) {
+        case 'fade2':
+          // fade in over 2 seconds
+          requestAnimationFrame(() => {
+            el.style.transition = "opacity 2s ease-in-out";
+            el.style.opacity = 1;
+          });
           break;
-        case "cut":
-          newEl.style.transition = "none";
-          newEl.style.opacity = "1";
+        case 'fade5':
+          // fade in over 5 seconds
+          requestAnimationFrame(() => {
+            el.style.transition = "opacity 5s ease-in-out";
+            el.style.opacity = 1;
+          });
+          break;
+        case 'slideRight':
+          el.classList.add('slide-in-right');
+          break;
+        case 'slideLeft':
+          el.classList.add('slide-in-left');
+          break;
+        case 'slideUp':
+          el.classList.add('slide-in-up');
+          break;
+        case 'slideDown':
+          el.classList.add('slide-in-down');
+          break;
+        case 'zoomIn':
+          el.classList.add('zoom-in');
+          break;
+        case 'zoomOut':
+          el.classList.add('zoom-out');
+          break;
+        case 'flip':
+          el.classList.add('flip-in');
+          break;
+        case 'blur':
+          el.classList.add('blur-in');
+          break;
+        case 'rotate':
+          el.classList.add('rotate-in');
+          break;
+        case 'pixelate':
+          el.classList.add('pixelate-in');
+          break;
+        case 'wipe':
+          el.classList.add('wipe-in');
+          break;
+        case 'cut':
+          // immediate appear
+          el.style.opacity = 1;
+          break;
+        case 'dissolve':
+          // for dissolve, fade in over 1s
+          requestAnimationFrame(() => {
+            el.style.transition = "opacity 1s ease-in-out";
+            el.style.opacity = 1;
+          });
           break;
         default:
-          newEl.classList.add(transition);
+          el.style.opacity = 1;
+          break;
       }
-
-      // Remove previous element after animation ends
-      if (lastEl) {
-        setTimeout(() => {
-          clearOldMedia();
-        }, 1000);
-      }
-
-      lastEl = newEl;
     }
 
+    // Show the cue (image or video) with given data
+    function showCue(data) {
+      if (data.blackout) {
+        // Show blackout overlay fading in smoothly
+        blackoutOverlay.style.transition = "opacity 1.2s ease-in-out";
+        blackoutOverlay.style.opacity = "1";
+
+        // Remove current media if any
+        if(currentEl) {
+          removeEl(currentEl);
+          currentEl = null;
+        }
+        return;
+      }
+
+      // If blackoutOverlay visible, fade it out
+      if (blackoutOverlay.style.opacity !== "0") {
+        blackoutOverlay.style.transition = "opacity 1.2s ease-in-out";
+        blackoutOverlay.style.opacity = "0";
+      }
+
+      // Create media element
+      const isVideo = data.cue.toLowerCase().endsWith(".mp4");
+      const el = isVideo ? document.createElement("video") : document.createElement("img");
+      el.src = data.cue;
+
+      if (isVideo) {
+        el.autoplay = data.autoplay ?? true;
+        el.loop = data.loop ?? true;
+        el.muted = true;
+        el.playsInline = true;
+        el.preload = "auto";
+        el.setAttribute("playsinline", "");
+        el.setAttribute("webkit-playsinline", "");
+        el.addEventListener("canplay", () => {
+          el.play().catch(() => {});
+        });
+      }
+
+      el.style.position = "absolute";
+      el.style.top = "50%";
+      el.style.left = "50%";
+      el.style.maxWidth = "100%";
+      el.style.maxHeight = "100%";
+      el.style.objectFit = "contain";
+      el.style.backfaceVisibility = "hidden";
+      el.style.willChange = "opacity, transform, filter";
+      el.style.opacity = 0;
+
+      cueDisplay.appendChild(el);
+
+      applyTransition(el, data.transition || "fade2");
+
+      // Update currentEl reference
+      currentEl = el;
+    }
+
+    // Receive messages from controller
     window.addEventListener("message", (event) => {
-      showCue(event.data);
+      const data = event.data;
+
+      // If blackout, fade overlay in and clear media
+      if (data.blackout) {
+        // fade blackout in
+        blackoutOverlay.style.transition = "opacity 1.2s ease-in-out";
+        blackoutOverlay.style.opacity = "1";
+
+        // Remove current element immediately
+        if(currentEl) {
+          removeEl(currentEl);
+          currentEl = null;
+        }
+        return;
+      }
+
+      // If currently blacked out, fade blackout out first
+      if (blackoutOverlay.style.opacity === "1") {
+        blackoutOverlay.style.transition = "opacity 1.2s ease-in-out";
+        blackoutOverlay.style.opacity = "0";
+        // Delay showing cue to after blackout fade out
+        setTimeout(() => {
+          clearDisplay(() => showCue(data), data.transition);
+        }, 1300);
+      } else {
+        clearDisplay(() => showCue(data), data.transition);
+      }
     });
 
+    // Fullscreen toggle function
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
-        document.getElementById("fsBtn").style.display = "none";
+        fsBtn.style.display = "none";
       } else {
         document.exitFullscreen();
+        fsBtn.style.display = "block";
       }
     }
+
+    const fsBtn = document.getElementById("fsBtn");
   </script>
 </body>
 </html>
