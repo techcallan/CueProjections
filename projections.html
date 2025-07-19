@@ -10,6 +10,36 @@
       max-height: 200px;
       object-fit: contain;
     }
+    .transitions-list {
+      margin-top: 2em;
+      max-width: 600px;
+      background: #222;
+      color: #eee;
+      padding: 1em;
+      border-radius: 8px;
+      font-family: monospace;
+    }
+    .transitions-list h3 {
+      margin-top: 0;
+      border-bottom: 1px solid #555;
+      padding-bottom: 0.5em;
+    }
+    .transitions-list ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .transitions-list li {
+      margin-bottom: 0.8em;
+    }
+    .transition-name {
+      font-weight: bold;
+      color: #00d9ff;
+    }
+    .transition-desc {
+      color: #bbb;
+      font-style: italic;
+      margin-left: 0.5em;
+    }
   </style>
 </head>
 <body>
@@ -34,6 +64,28 @@
       <button onclick="toggleBlackout()">Blackout</button>
       <button onclick="endShow()">End Show</button>
     </div>
+
+    <div class="transitions-list">
+      <h3>Available Transitions</h3>
+      <ul>
+        <li><span class="transition-name">cut</span> — Instant cut with no animation.</li>
+        <li><span class="transition-name">fade2</span> — Fade in over 2 seconds.</li>
+        <li><span class="transition-name">fade5</span> — Fade in over 5 seconds.</li>
+        <li><span class="transition-name">slide</span> — Slide in from the right.</li>
+        <li><span class="transition-name">slideLeft</span> — Slide in from the left.</li>
+        <li><span class="transition-name">slideRight</span> — Slide in from the right.</li>
+        <li><span class="transition-name">slideUp</span> — Slide in from the bottom.</li>
+        <li><span class="transition-name">slideDown</span> — Slide in from the top.</li>
+        <li><span class="transition-name">dissolve</span> — Crossfade between old and new cues.</li>
+        <li><span class="transition-name">zoomIn</span> — Zoom in from smaller scale while fading.</li>
+        <li><span class="transition-name">zoomOut</span> — Zoom out while fading away.</li>
+        <li><span class="transition-name">flip</span> — Flip in like a card flipping.</li>
+        <li><span class="transition-name">blur</span> — Blur in while fading up.</li>
+        <li><span class="transition-name">rotate</span> — Rotate in while fading up.</li>
+        <li><span class="transition-name">pixelate</span> — Pixelate out old cue, fade in new.</li>
+        <li><span class="transition-name">wipe</span> — Wipe reveal from left to right.</li>
+      </ul>
+    </div>
   </div>
 
   <script>
@@ -48,12 +100,12 @@
         { title: "Slide Cue", file: "1.png", transition: "slide" },
         { title: "Fade In", file: "2.png", transition: "fade2" },
         { title: "Fade Slow", file: "3.png", transition: "fade5" },
-        { title: "Dissolve Cue", file: "5.png", transition: "dissolve" },
-        { title: "Video Cue", file: "4.mp4", transition: "fade2", autoplay: true, loop: true }
+        { title: "Dissolve Cue", file: "4.png", transition: "dissolve" },
+        { title: "Video Cue", file: "video.mp4", transition: "fade2", autoplay: true, loop: true }
       ],
       "Trashion": [
         { title: "Start", file: "start.png", transition: "fade2" },
-        { title: "Walk Video", file: "walk.mp4", transition: "slide", autoplay: true, loop: true }
+        { title: "Walk Video", file: "walk.mp4", transition: "slideRight", autoplay: true, loop: true }
       ]
     };
 
