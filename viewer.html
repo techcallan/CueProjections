@@ -3,444 +3,206 @@
 <head>
   <meta charset="UTF-8" />
   <title>Viewer</title>
+  <link rel="stylesheet" href="css/style.css" />
   <style>
     html, body {
-      margin: 0; padding: 0;
+      margin: 0;
+      padding: 0;
       background-color: black;
-      height: 100%; width: 100%;
+      height: 100%;
+      width: 100%;
       overflow: hidden;
     }
 
     #cueDisplay {
-      width: 100%; height: 100%;
-      position: relative;
-      overflow: hidden;
-      background: black;
-    }
-
-    #cueDisplay img,
-    #cueDisplay video {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      max-width: 100%; max-height: 100%;
-      object-fit: contain;
-      opacity: 0;
-      transition-property: opacity, transform;
-      transition-timing-function: ease-in-out;
-    }
-
-    /* Classes for transition durations */
-    .fade2 {
-      transition-duration: 2s;
-    }
-    .fade5 {
-      transition-duration: 5s;
-    }
-    .fade1 {
-      transition-duration: 1s;
-    }
-    
-    /* Active cue */
-    .active {
-      opacity: 1;
-      z-index: 10;
-      transform: translate(-50%, -50%) scale(1) rotate(0deg);
-    }
-
-    /* Starting states for zoom */
-    .zoomInStart {
-      transform: translate(-50%, -50%) scale(0.7);
-      opacity: 0;
-    }
-
-    .zoomOutStart {
-      transform: translate(-50%, -50%) scale(1.3);
-      opacity: 0;
-    }
-
-    /* Slide from right start */
-    .slideRightStart {
-      transform: translate(calc(150%), -50%);
-      opacity: 0;
-    }
-
-    /* Slide from left start */
-    .slideLeftStart {
-      transform: translate(calc(-50% - 150%), -50%);
-      opacity: 0;
-    }
-
-    /* Slide from top */
-    .slideDownStart {
-      transform: translate(-50%, calc(-50% - 150%));
-      opacity: 0;
-    }
-
-    /* Slide from bottom */
-    .slideUpStart {
-      transform: translate(-50%, calc(150%));
-      opacity: 0;
-    }
-
-    /* Flip start */
-    .flipStart {
-      transform: translate(-50%, -50%) rotateY(90deg);
-      opacity: 0;
-      backface-visibility: hidden;
-    }
-
-    /* Blur start */
-    .blurStart {
-      filter: blur(10px);
-      opacity: 0;
-    }
-
-    /* Rotate start */
-    .rotateStart {
-      transform: translate(-50%, -50%) rotate(-90deg);
-      opacity: 0;
-    }
-
-    /* Pixelate effect placeholder (simplified) */
-    .pixelateStart {
-      filter: blur(8px);
-      opacity: 0;
-    }
-
-    /* Wipe effect container */
-    .wipeContainer {
-      position: absolute;
-      overflow: hidden;
       width: 100%;
       height: 100%;
-      top: 0; left: 0;
       background: black;
-      pointer-events: none;
-      z-index: 20;
+      position: relative;
+      overflow: hidden;
     }
 
-    .wipeReveal {
+    .media {
       position: absolute;
-      height: 100%;
-      background: black;
-      animation: wipeReveal 1s forwards;
-      left: 0;
-      top: 0;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      opacity: 0;
+      z-index: 0;
     }
 
-    @keyframes wipeReveal {
-      from { width: 100%; }
-      to { width: 0%; }
+    .active {
+      opacity: 1 !important;
+      z-index: 2;
+    }
+
+    .fade2 { transition: opacity 2s ease-in-out; }
+    .fade5 { transition: opacity 5s ease-in-out; }
+
+    @keyframes slideRight { from { transform: translate(100%, -50%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
+    @keyframes slideLeft { from { transform: translate(-200%, -50%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
+    @keyframes slideUp { from { transform: translate(-50%, -200%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
+    @keyframes slideDown { from { transform: translate(-50%, 100%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
+
+    .slideRight { animation: slideRight 1s forwards; }
+    .slideLeft { animation: slideLeft 1s forwards; }
+    .slideUp { animation: slideUp 1s forwards; }
+    .slideDown { animation: slideDown 1s forwards; }
+
+    @keyframes zoomIn { from { transform: scale(0.7) translate(-50%, -50%); opacity: 0; } to { transform: scale(1) translate(-50%, -50%); opacity: 1; } }
+    @keyframes zoomOut { from { transform: scale(1.4) translate(-50%, -50%); opacity: 0; } to { transform: scale(1) translate(-50%, -50%); opacity: 1; } }
+
+    .zoomIn { animation: zoomIn 1s forwards; }
+    .zoomOut { animation: zoomOut 1s forwards; }
+
+    @keyframes flip {
+      from { transform: rotateY(90deg) translate(-50%, -50%); opacity: 0; }
+      to { transform: rotateY(0deg) translate(-50%, -50%); opacity: 1; }
+    }
+    .flip { animation: flip 1s forwards; }
+
+    @keyframes rotate {
+      from { transform: rotate(90deg) translate(-50%, -50%); opacity: 0; }
+      to { transform: rotate(0deg) translate(-50%, -50%); opacity: 1; }
+    }
+    .rotate { animation: rotate 1s forwards; }
+
+    @keyframes blurIn {
+      from { filter: blur(20px); opacity: 0; }
+      to { filter: blur(0px); opacity: 1; }
+    }
+    .blur { animation: blurIn 1s forwards; }
+
+    #fsBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 9999;
+      background: #2196f3;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #fsBtn:hover {
+      background: #1e88e5;
     }
   </style>
 </head>
 <body>
   <div id="cueDisplay"></div>
+  <button id="fsBtn" onclick="toggleFullscreen()">Fullscreen</button>
 
   <script>
     const cueDisplay = document.getElementById("cueDisplay");
-    let currentEl = null;
-    let prevEl = null;
+    let lastEl = null;
 
-    // Helper: clear old cue with dissolve crossfade
-    function crossfade(newEl, durationMs = 1000) {
-      if (currentEl) {
-        prevEl = currentEl;
-        prevEl.style.transition = `opacity ${durationMs}ms ease-in-out`;
-        prevEl.style.opacity = 0;
-        // Remove previous element after transition
-        setTimeout(() => {
-          if (prevEl && prevEl.parentElement) prevEl.parentElement.removeChild(prevEl);
-          prevEl = null;
-        }, durationMs);
-      }
-      currentEl = newEl;
-      currentEl.style.opacity = 1;
-    }
-
-    // Apply starting styles for transitions, then animate in
-    function applyTransition(el, type) {
-      // Reset transitions and styles
-      el.style.transition = "none";
-      el.style.opacity = 0;
-      el.style.transform = "translate(-50%, -50%)";
-
-      // Prepare duration and start states
-      let duration = 1000;
-      switch (type) {
-        case 'fade2':
-          duration = 2000;
-          el.classList.remove(...el.classList);
-          el.style.transition = `opacity ${duration}ms ease-in-out`;
-          break;
-
-        case 'fade5':
-          duration = 5000;
-          el.classList.remove(...el.classList);
-          el.style.transition = `opacity ${duration}ms ease-in-out`;
-          break;
-
-        case 'cut':
-          duration = 0;
-          el.style.transition = "none";
-          el.style.opacity = 1;
-          return;
-
-        case 'slideRight':
-          duration = 1000;
-          el.classList.add("slideRightStart");
-          requestAnimationFrame(() => {
-            el.style.transition = `opacity ${duration}ms ease-in-out, transform ${duration}ms ease-in-out`;
-            el.style.opacity = 1;
-            el.style.transform = "translate(-50%, -50%)";
-          });
-          break;
-
-        case 'slideLeft':
-          duration = 1000;
-          el.classList.add("slideLeftStart");
-          requestAnimationFrame(() => {
-            el.style.transition = `opacity ${duration}ms ease-in-out, transform ${duration}ms ease-in-out`;
-            el.style.opacity = 1;
-            el.style.transform = "translate(-50%, -50%)";
-          });
-          break;
-
-        case 'slideUp':
-          duration = 1000;
-          el.classList.add("slideUpStart");
-          requestAnimationFrame(() => {
-            el.style.transition = `opacity ${duration}ms ease-in-out, transform ${duration}ms ease-in-out`;
-            el.style.opacity = 1;
-            el.style.transform = "translate(-50%, -50%)";
-          });
-          break;
-
-        case 'slideDown':
-          duration = 1000;
-          el.classList.add("slideDownStart");
-          requestAnimationFrame(() => {
-            el.style.transition = `opacity ${duration}ms ease-in-out, transform ${duration}ms ease-in-out`;
-            el.style.opacity = 1;
-            el.style.transform = "translate(-50%, -50%)";
-          });
-          break;
-
-        case 'zoomIn':
-          duration = 1000;
-          el.classList.add("zoomInStart");
-          requestAnimationFrame(() => {
-            el.style.transition = `opacity ${duration}ms ease-in-out, transform ${duration}ms ease-in-out`;
-            el.style.opacity = 1;
-            el.style.transform = "translate(-50%, -50%) scale(1)";
-          });
-          break;
-
-        case 'zoomOut':
-          duration = 1000;
-          el.classList.add("zoomOutStart");
-          requestAnimationFrame(() => {
-            el.style.transition = `opacity ${duration}ms ease-in-out, transform ${duration}ms ease-in-out`;
-            el.style.opacity = 1;
-            el.style.transform = "translate(-50%, -50%) scale(1)";
-          });
-          break;
-
-        case 'flip':
-          duration = 1000;
-          el.classList.add("flipStart");
-          requestAnimationFrame(() => {
-            el.style.transition = `opacity ${duration}ms ease-in-out, transform ${duration}ms ease-in-out`;
-            el.style.opacity = 1;
-            el.style.transform = "translate(-50%, -50%) rotateY(0deg)";
-          });
-          break;
-
-        case 'blur':
-          duration = 1000;
-          el.classList.add("blurStart");
-          requestAnimationFrame(() => {
-            el.style.transition = `opacity ${duration}ms ease-in-out, filter ${duration}ms ease-in-out`;
-            el.style.opacity = 1;
-            el.style.filter = "blur(0)";
-          });
-          break;
-
-        case 'rotate':
-          duration = 1000;
-          el.classList.add("rotateStart");
-          requestAnimationFrame(() => {
-            el.style.transition = `opacity ${duration}ms ease-in-out, transform ${duration}ms ease-in-out`;
-            el.style.opacity = 1;
-            el.style.transform = "translate(-50%, -50%) rotate(0deg)";
-          });
-          break;
-
-        case 'pixelate':
-          duration = 1000;
-          el.classList.add("pixelateStart");
-          requestAnimationFrame(() => {
-            el.style.transition = `opacity ${duration}ms ease-in-out, filter ${duration}ms ease-in-out`;
-            el.style.opacity = 1;
-            el.style.filter = "blur(0)";
-          });
-          break;
-
-        case 'wipe':
-          // Wipe effect is more complex: We'll overlay a wipe div then fade in cue
-          const wipeDiv = document.createElement("div");
-          wipeDiv.className = "wipeReveal";
-          cueDisplay.appendChild(wipeDiv);
-
-          duration = 1000;
-          el.style.transition = `opacity ${duration}ms ease-in-out`;
-          el.style.opacity = 1;
-
-          // Animate wipe div and remove after
-          wipeDiv.style.animation = "wipeReveal 1s forwards";
-          setTimeout(() => {
-            wipeDiv.remove();
-          }, duration);
-          break;
-
-        case 'dissolve':
-          // Special crossfade handled externally, so just set opacity 1 and done
-          el.style.transition = `opacity 1000ms ease-in-out`;
-          el.style.opacity = 1;
-          break;
-
-        default:
-          // Default to fade 1s
-          duration = 1000;
-          el.style.transition = `opacity ${duration}ms ease-in-out`;
-          el.style.opacity = 1;
-          break;
+    function clearOldMedia() {
+      if (lastEl) {
+        lastEl.remove();
+        lastEl = null;
       }
     }
 
     function showCue(data) {
-      if (data.blackout) {
-        // Immediate black screen
-        // Remove all current cues
-        if (currentEl) {
-          currentEl.style.transition = "opacity 1000ms ease-in-out";
-          currentEl.style.opacity = 0;
-          setTimeout(() => {
-            if (currentEl.parentElement) currentEl.parentElement.removeChild(currentEl);
-            currentEl = null;
-          }, 1000);
-        }
-        // Show black full screen div
-        let blackDiv = document.createElement("div");
-        blackDiv.style.position = "absolute";
-        blackDiv.style.top = 0;
-        blackDiv.style.left = 0;
-        blackDiv.style.width = "100%";
-        blackDiv.style.height = "100%";
-        blackDiv.style.backgroundColor = "black";
-        blackDiv.style.opacity = 0;
-        blackDiv.style.transition = "opacity 1000ms ease-in-out";
-        cueDisplay.appendChild(blackDiv);
-        requestAnimationFrame(() => {
-          blackDiv.style.opacity = 1;
-        });
-        return;
-      }
-
-      // Normal cue
       const isVideo = data.cue.endsWith(".mp4");
-      const el = isVideo ? document.createElement("video") : document.createElement("img");
-      el.src = data.cue;
-      el.style.position = "absolute";
-      el.style.top = "50%";
-      el.style.left = "50%";
-      el.style.transform = "translate(-50%, -50%)";
-      el.style.opacity = 0;
+      const newEl = document.createElement(isVideo ? "video" : "img");
+      newEl.classList.add("media");
+      newEl.src = data.cue;
 
       if (isVideo) {
-        el.autoplay = data.autoplay ?? true;
-        el.loop = data.loop ?? true;
-        el.muted = true;
-        el.playsInline = true;
-        el.preload = "auto";
-        el.addEventListener("canplay", () => el.play());
+        newEl.autoplay = data.autoplay ?? true;
+        newEl.loop = data.loop ?? true;
+        newEl.muted = true;
+        newEl.playsInline = true;
+        newEl.preload = "auto";
+        newEl.addEventListener("canplay", () => newEl.play());
       }
 
-      cueDisplay.appendChild(el);
-
-      if(data.transition === 'dissolve' && currentEl) {
-        // For dissolve, crossfade opacity both images
-        el.style.transition = "opacity 1000ms ease-in-out";
-        el.style.opacity = 0;
-        setTimeout(() => {
-          el.style.opacity = 1;
-          if (currentEl) {
-            currentEl.style.transition = "opacity 1000ms ease-in-out";
-            currentEl.style.opacity = 0;
-          }
-          // Remove old cue after transition
-          setTimeout(() => {
-            if (currentEl && currentEl.parentElement) currentEl.parentElement.removeChild(currentEl);
-            currentEl = el;
-          }, 1000);
-        }, 20);
+      // Special: blackout cue
+      if (data.blackout) {
+        const blackout = document.createElement("div");
+        blackout.style.background = "black";
+        blackout.style.position = "absolute";
+        blackout.style.top = "0";
+        blackout.style.left = "0";
+        blackout.style.width = "100%";
+        blackout.style.height = "100%";
+        blackout.style.opacity = "0";
+        blackout.style.transition = "opacity 1s ease-in-out";
+        blackout.style.zIndex = 10;
+        cueDisplay.appendChild(blackout);
+        requestAnimationFrame(() => blackout.style.opacity = "1");
         return;
       }
 
-      // For other transitions: animate new in, fade old out after
-      // Start with starting styles
-      switch(data.transition) {
+      cueDisplay.appendChild(newEl);
+
+      // Prepare dissolve (crossfade)
+      if (data.transition === "dissolve" && lastEl) {
+        newEl.style.transition = "opacity 1s ease-in-out";
+        lastEl.style.transition = "opacity 1s ease-in-out";
+        lastEl.style.zIndex = 1;
+        newEl.style.zIndex = 2;
+        newEl.style.opacity = 0;
+
+        requestAnimationFrame(() => {
+          newEl.style.opacity = 1;
+          lastEl.style.opacity = 0;
+        });
+
+        setTimeout(() => {
+          clearOldMedia();
+          lastEl = newEl;
+        }, 1000);
+        return;
+      }
+
+      // Other transitions
+      const transition = data.transition || "fade2";
+      newEl.classList.add("active");
+
+      switch (transition) {
         case "fade2":
         case "fade5":
-        case "cut":
-        case "slideRight":
-        case "slideLeft":
-        case "slideUp":
-        case "slideDown":
-        case "zoomIn":
-        case "zoomOut":
-        case "flip":
-        case "blur":
-        case "rotate":
-        case "pixelate":
-        case "wipe":
-          // Apply start styles first
-          applyTransition(el, data.transition);
-          // Crossfade after delay
-          setTimeout(() => {
-            if(currentEl && currentEl !== el) {
-              currentEl.style.transition = `opacity 1000ms ease-in-out`;
-              currentEl.style.opacity = 0;
-              setTimeout(() => {
-                if(currentEl.parentElement) currentEl.parentElement.removeChild(currentEl);
-                currentEl = el;
-              }, 1000);
-            } else {
-              currentEl = el;
-            }
-          }, 1000);
+          newEl.classList.add(transition);
           break;
-
+        case "cut":
+          newEl.style.transition = "none";
+          newEl.style.opacity = "1";
+          break;
         default:
-          el.style.opacity = 1;
-          if (currentEl && currentEl !== el) {
-            currentEl.style.opacity = 0;
-            setTimeout(() => {
-              if(currentEl.parentElement) currentEl.parentElement.removeChild(currentEl);
-              currentEl = el;
-            }, 1000);
-          } else {
-            currentEl = el;
-          }
+          newEl.classList.add(transition);
       }
+
+      // Remove previous element after animation ends
+      if (lastEl) {
+        setTimeout(() => {
+          clearOldMedia();
+        }, 1000);
+      }
+
+      lastEl = newEl;
     }
 
     window.addEventListener("message", (event) => {
-      const data = event.data;
-      showCue(data);
+      showCue(event.data);
     });
 
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        document.getElementById("fsBtn").style.display = "none";
+      } else {
+        document.exitFullscreen();
+      }
+    }
   </script>
 </body>
 </html>
