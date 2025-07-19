@@ -2,22 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Projections Control</title>
+  <title>Projections</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
     .preview-container img, .preview-container video {
       max-width: 100%;
       max-height: 200px;
       object-fit: contain;
-    }
-    .button-group {
-      margin-top: 1em;
-    }
-    label {
-      margin-right: 0.5em;
-    }
-    select {
-      margin-left: 0.5em;
     }
   </style>
 </head>
@@ -26,18 +17,7 @@
     <h1>Projections Control</h1>
     <h3 id="currentCueTitle">Cue 0 (Blank)</h3>
 
-    <div>
-      <label for="transitionSelect">Transition:</label>
-      <select id="transitionSelect">
-        <option value="cut">Immediate Cut</option>
-        <option value="slide">Slide</option>
-        <option value="fade2">2 sec Fade</option>
-        <option value="fade5">5 sec Fade</option>
-        <option value="dissolve">Dissolve</option>
-      </select>
-    </div>
-
-    <div class="preview-container" style="display:flex; gap: 2em; margin-top: 1em;">
+    <div class="preview-container" style="display: flex; gap: 2em;">
       <div>
         <h4>Current Cue Preview</h4>
         <div id="currentPreview"></div>
@@ -58,24 +38,28 @@
 
   <script>
     let viewerWindow = window.open("viewer.html", "viewerWindow");
-    let cues = [];
     let currentCueIndex = 0;
     let isBlackout = false;
     let lastCueBeforeBlackout = 0;
 
+    // Define cues with transitions and video options
     const shows = {
       "RigCheck": [
-        { title: "Blank", fade: 0, file: "" },
-        { title: "1",  fade: 1.5, file: "1.png" },
-        { title: "2",  fade: 2, file: "2.png" },
-        { title: "3", fade: 2, file: "3.png" },
-        { title: "Video", fade: 1, file: "4.mp4" },
-        { title: "4", fade: 2, file: "5.png" }
+        { title: "Blank", file: "", transition: "cut" },
+        { title: "Slide Cue", file: "1.png", transition: "slide" },
+        { title: "Fade In", file: "2.png", transition: "fade2" },
+        { title: "Fade Slow", file: "3.png", transition: "fade5" },
+        { title: "Dissolve Cue", file: "4.png", transition: "dissolve" },
+        { title: "Video Cue", file: "video.mp4", transition: "fade2", autoplay: true, loop: true }
+      ],
+      "Trashion": [
+        { title: "Start", file: "start.png", transition: "fade2" },
+        { title: "Walk Video", file: "walk.mp4", transition: "slide", autoplay: true, loop: true }
       ]
     };
 
     const show = localStorage.getItem("currentShow") || "RigCheck";
-    cues = shows[show] || [{ title: "Blank", fade: 0, file: "" }];
+    const cues = shows[show] || [{ title: "Blank", file: "", transition: "cut" }];
 
     function getCuePath(cue) {
       return cue.file ? `assets/${show}/${cue.file}` : "";
@@ -87,53 +71,44 @@
       if (!cue || !cue.file) return;
 
       const path = getCuePath(cue);
-      const isVideo = cue.file.toLowerCase().endsWith(".mp4");
-      let el;
+      const isVideo = cue.file.endsWith(".mp4");
+      const el = isVideo ? document.createElement("video") : document.createElement("img");
+      el.src = path;
+
       if (isVideo) {
-        el = document.createElement("video");
-        el.src = path;
         el.autoplay = true;
-        el.loop = true;
+        el.loop = cue.loop ?? true;
         el.muted = true;
         el.playsInline = true;
         el.preload = "auto";
-      } else {
-        el = document.createElement("img");
-        el.src = path;
-        el.alt = cue.title;
       }
 
       container.appendChild(el);
     }
 
     function updatePreviews() {
-      const current = cues[currentCueIndex];
-      const next = cues[currentCueIndex + 1];
-      updatePreview("currentPreview", current);
-      updatePreview("nextPreview", next);
-      document.getElementById("currentCueTitle").textContent = `Cue ${currentCueIndex}: ${current.title}`;
+      updatePreview("currentPreview", cues[currentCueIndex]);
+      updatePreview("nextPreview", cues[currentCueIndex + 1]);
+      document.getElementById("currentCueTitle").textContent = `Cue ${currentCueIndex}: ${cues[currentCueIndex].title}`;
     }
 
-    // Send cue message to viewer, including transition and blackout status
-    function sendCue(overrideCueIndex = null, overrideBlackout = null) {
+    function sendCue(index = currentCueIndex, overrideBlackout = null) {
       if (!viewerWindow || viewerWindow.closed) return;
-      const index = overrideCueIndex !== null ? overrideCueIndex : currentCueIndex;
       const cue = cues[index];
-      const blackoutStatus = overrideBlackout !== null ? overrideBlackout : isBlackout;
-      const transitionSelect = document.getElementById("transitionSelect");
-      const transition = transitionSelect.value;
+      const transition = cue.transition || "cut";
 
       viewerWindow.postMessage({
-        cue: blackoutStatus ? null : getCuePath(cue),
-        name: blackoutStatus ? "Blackout" : cue.title,
-        fade: blackoutStatus ? 2 : cue.fade, // Use 2 seconds fade for blackout fade down
-        blackout: blackoutStatus,
-        transition: blackoutStatus ? "fade2" : transition
+        cue: getCuePath(cue),
+        title: cue.title,
+        blackout: overrideBlackout ?? isBlackout,
+        transition: transition,
+        autoplay: cue.autoplay ?? true,
+        loop: cue.loop ?? true
       }, "*");
     }
 
     function goCue() {
-      if (isBlackout) toggleBlackout(); // Disable blackout if active first
+      if (isBlackout) toggleBlackout();
       if (currentCueIndex < cues.length - 1) {
         currentCueIndex++;
         updatePreviews();
@@ -151,17 +126,10 @@
 
     function toggleBlackout() {
       if (!isBlackout) {
-        // Fade to blackout over 2 seconds then send blackout
         lastCueBeforeBlackout = currentCueIndex;
         isBlackout = true;
-
-        // Send fade down transition first, then blackout
-        sendCue(currentCueIndex, false); // Send current cue with fade2 for fade out
-        setTimeout(() => {
-          sendCue(null, true); // Then send blackout
-        }, 2000);
+        viewerWindow.postMessage({ blackout: true, transition: "fade2" }, "*");
       } else {
-        // Fade up from blackout to last cue with selected transition
         isBlackout = false;
         updatePreviews();
         sendCue();
